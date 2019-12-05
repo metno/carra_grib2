@@ -1,0 +1,13 @@
+switch (indicatorOfParameter)
+{
+  case 1:
+     switch (typeOfLevel)
+     {
+        case 'theta':
+           write 'lsm.grb';
+        default:
+           set deleteLocalDefinition=1;
+     } 
+  default:
+        set deleteLocalDefinition=1;
+}

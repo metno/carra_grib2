@@ -1,0 +1,78 @@
+#!/bin/bash
+#SBATCH --job-name=carra201805
+#SBATCH --workdir=/home/ms/se/smu/carra_grib/grib
+#SBATCH --qos=normal
+#SBATCH --time=1-00:00:00
+
+set -ax 
+
+inpdir=/scratch/ms/no/fab0/carra_grib/ # hirlam input files
+bin=. # where this script and rules' files for grib_filter are 
+
+
+ym=$1
+#month=$1
+
+##for month in 201601
+##do
+
+#base=$month
+base=$ym
+(( iys=$base/100 ))
+(( mm=$base-$iys*100 ))
+ims=`perl -e "printf('%2.2i', '$mm')"`
+
+echo $iys $ims
+
+iy=$iys
+im=$ims
+id=01
+ih=00
+
+dtg=$iy$im$id$ih
+
+echo $dtg
+exit 0
+
+while [ $im -eq $ims ]
+do
+
+# production user smoz is used for monthly updates from 20180901
+
+#TODO replace with nhx/..../CARAR/..
+#  ecp ec:/smoz/harmonie/carra_aladin_2016/$iy/$im/$id/$ih/ba*grib $inpdir/.
+#  ecp ec:/smoz/harmonie/carra_aladin_2016/$iy/$im/$id/$ih/fc*+000grib $inpdir/.
+#  ecp ec:/smoz/harmonie/carra_aladin_2016/$iy/$im/$id/$ih/fc*grib_fp $inpdir/.
+#  ecp ec:/smoz/harmonie/carra_aladin_2016/$iy/$im/$id/$ih/fc*grib_sfx $inpdir/.
+# when I ran the experiments
+
+#ecp ec:/fa0e/harmonie/newoutput_2/$iy/$im/$id/$ih/ba*grib $inpdir/.
+#ecp ec:/fa0e/harmonie/newoutput_2/$iy/$im/$id/$ih/fc*+000grib $inpdir/.
+#ecp ec:/fa0e/harmonie/newoutput_2/$iy/$im/$id/$ih/fc*grib_fp $inpdir/.
+#ecp ec:/fa0e/harmonie/newoutput_2/$iy/$im/$id/$ih/fc*grib_sfx $inpdir/.
+
+#  ecp ec:/smu/harmonie/carra_aladin_2016/$iy/$im/$id/$ih/ba*grib $inpdir/.
+#  ecp ec:/smu/harmonie/carra_aladin_2016/$iy/$im/$id/$ih/fc*+000grib $inpdir/.
+#  ecp ec:/smu/harmonie/carra_aladin_2016/$iy/$im/$id/$ih/fc*grib_fp $inpdir/.
+#  ecp ec:/smu/harmonie/carra_aladin_2016/$iy/$im/$id/$ih/fc*grib_sfx $inpdir/.
+
+  echo $iy $im $id $ih
+
+  dtg=$(/home/ms/no/fab0/carra_grib/from_smo/mandtg.x $dtg + 6)
+
+  (( base = $dtg / 100 ))
+  (( yy = $base / 10000 ))
+  (( mm = ( $base - $yy*10000) / 100 ))
+  (( dd = ($base - $yy*10000 - $mm*100) ))
+  (( hh = ($dtg - $base*100) ))
+
+  iy=$yy
+  im=`perl -e "printf('%2.2i', '$mm')"`
+  id=`perl -e "printf('%2.2i', '$dd')"`
+  ih=`perl -e "printf('%2.2i', '$hh')"`
+
+done
+
+##done
+
+exit

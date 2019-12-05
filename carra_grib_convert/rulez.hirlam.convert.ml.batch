@@ -1,0 +1,75 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = @select@ ;
+transient tableVer = @tableVer@ ;
+transient dtg = @dtg@ ;
+transient step = @step@ ;
+transient ltype = @ltype@ ;
+
+transient debug = 0;
+
+transient param2 = -999;
+transient type2 = "";
+transient flev = "";
+
+if (
+   ###########################
+   # do only vertical levels!
+   ###########################
+
+   # model level
+    ( indicatorOfTypeOfLevel == 109 && level >= 1 && level <= 65 )
+
+    ){ 
+
+   switch (step) {
+     case 0:  set type2 = 'an';
+     default: set type2 = 'fc';
+   }
+
+   switch (ltype) {
+     case 0:  set flev = 'sfc';
+     case 1:  set flev = 'soil';
+     case 2:  set flev = 'ml';
+     case 3:  set flev = 'pl';
+     case 4:  set flev = 'hl';
+     default: set flev = 'xxx';
+   }
+
+   switch (param) {
+          
+#      case 71.253: set param2 = 260257; # cloud cover
+  #    case  6.253: set param2 = 156;    # geopotential height
+  #    case  1.253: set param2 = 54;     # pressure
+#      case 76.253: set param2 = 246;    # specific cloud liquid water content
+#      case 58.253: set param2 = 247;    # specific cloud ice water content
+      case 51.253: set param2 = 133;    # specific humidity
+  #    case 52.253: set param2 = 157;    # relative humidity
+      case 11.253: set param2 = 130;    # temperature
+  #    case 31.253: set param2 = 3031;   # wind direction
+  #    case 32.253: set param2 = 10;     # wind speed
+      case 181.253: set param2 = 75;     # specific rain water content
+      case 184.253: set param2 = 76;     # --||-- snow --||--
+      case 201.253: set param2 = 260028;   # --||-- grauple --||--
+      case 33.253: set param2 = 131;    # u-velocity
+      case 34.253: set param2 = 132;    # v-velocity
+ #     case ??.253: set param2 = ??;     # vertical velocity
+      case 200.253: set param2 = 260155;   # TKE
+      default:     set param2 = -999;
+   }
+
+   set centre = 82;
+
+   if (debug == 1){
+      print "1:debug indicatorOfTypeOfLevel=[indicatorOfTypeOfLevel:l] level=[level] levtype=[levtype] paramId=[paramId] param=[param] param2=[param2]";
+   }
+
+   if (param2 != -999) {
+     if ( select == 1 ){
+        write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1";
+     }
+   }
+
+ }

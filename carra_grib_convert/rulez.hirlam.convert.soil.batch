@@ -1,0 +1,135 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = @select@ ;
+transient tableVer = @tableVer@ ;
+transient dtg = @dtg@ ;
+transient step = @step@ ;
+transient ltype = @ltype@ ;
+
+transient debug = 0;
+
+transient parType = "";
+transient param2 = -999;
+transient sl = -999;
+transient flev = "";
+
+if (
+   ###########################
+   # do only soil levels!
+   ###########################
+   # sfc level 2m
+    ( indicatorOfTypeOfLevel == 105 && level == 2 ) ||
+   # sfc level 10m 
+    ( indicatorOfTypeOfLevel == 105 && level == 10 ) ||
+   # sfc level (200)
+    ( indicatorOfTypeOfLevel == 200 && level == 0 ) ||
+   # sfc level (300)
+    ( indicatorOfTypeOfLevel == 105 && level == 300 ) ||
+   # sfc level
+    ( indicatorOfTypeOfLevel == 105 && level == 0 ) ||
+   # soil levels
+    ( indicatorOfTypeOfLevel == 105 && ( level == 800 || level == 801 || level == 802 || level == 803 )) ||
+   # sea ice
+    (indicatorOfTypeOfLevel == 105 && ( level == 731 || level == 732 || level == 733 || level == 734 )) ||
+   # sea level 
+    ( indicatorOfTypeOfLevel == 102 &&  level == 0 ) ||
+   # static
+    ( indicatorOfTypeOfLevel == 103 )
+
+    ){ 
+
+
+   switch (step) {
+     case 0:  transient type2 = 'an';
+     default: transient type2 = 'fc';
+   }
+
+   switch (ltype) {
+     case 0:  set flev = 'sfc';
+     case 1:  set flev = 'soil';
+     case 2:  set flev = 'ml';
+     case 3:  set flev = 'pl';
+     case 4:  set flev = 'soil';
+     default: set flev = 'xxx';
+   }
+
+#    switch (param) {
+
+#        case    11.1: set param2 = 260360;      # soil temp
+#        case    86.1: set param2 = 260199;      # volumetric soil moisture
+#
+#        default: set param2 = -999;
+
+#    }
+
+    switch (param) {
+
+      case 11.1: 
+        switch (indicatorOfTypeOfLevel) {
+          case 102: set param2 = 34; #SST
+          case 105:
+            switch (level) {
+              case 731: set param2 = 35;     # ice temp l1
+              case 732: set param2 = 36;     # l2
+              case 733: set param2 = 37;     # l3
+              case 734: set param2 = 38;     # l4
+              case 800: set param2 = 9006;  # soil temp l1
+                        set typeOfLevel = 'depthBelowLand';      # soil temp
+              case 2: set param2= -999;      # dont read t2m from sfx
+              default:
+            }
+          default:
+        }
+      case 86.1: set param2 = 260199;      # volumetric soil moisture
+                 set typeOfLevel = 'depthBelowLand';      # volumetric soil moisture
+      case 193.1: set param2 = 666; 
+      case 91.1: set param2 = 31;          # Sea ice fraction
+      case 92.1: set param2 = 3092;        # Sea ice thickness
+      case 128.1: set param2 = 174008;        # RUNOFFC_ISBA
+      case 129.1: set param2 = 260430;        # DRAINC_ISBA
+      
+
+      default:
+
+    }
+
+    switch (level) {
+
+        case 800: set level = 1;
+        case 801: set level = 2;
+        case 802: set level = 3;
+        case 803: set level = 3;
+
+        default:
+
+    }
+
+    switch (param) {
+
+        case 11.1: set parType = "soil";
+        case 86.1: set parType = "soil";
+        case 193.1: set parType = "soil";
+        case 129.1: set parType = "soil";
+#        case 121.1: set parType = "sfc";
+
+        default:
+
+    }
+
+    set centre = 82;
+    set PVPresent = 0;
+    set NV = 0;
+    set debug = 1;
+    if (debug == 1){
+      print "1:debug parType=[parType], paramId=[paramId], param=[param], param2=[param2]";
+    }
+
+    if (param2 != -999) {
+      if ( select == 1 ){
+        write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1";
+      }
+    }
+
+  }

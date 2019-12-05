@@ -1,0 +1,244 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = @select@ ;
+transient tableVer = @tableVer@ ;
+transient dtg = @dtg@ ;
+transient step = @step@ ;
+transient fstep = @fstep@ ;
+transient ltype = @ltype@ ;
+
+transient debug = 1;
+
+transient parType = "";
+transient param2 = -999;
+transient sl = -999;
+transient flev = "";
+
+if (
+   ###########################
+   # do only surface levels!
+   ###########################
+   # sfc level 2m
+    ( indicatorOfTypeOfLevel == 105 && level == 2 ) ||
+   # sfc level 10m 
+    ( indicatorOfTypeOfLevel == 105 && level == 10 ) ||
+   # sfc level (200)
+    ( indicatorOfTypeOfLevel == 200 && level == 0 ) ||
+   # sfc level
+    ( indicatorOfTypeOfLevel == 105 && level == 0 ) ||
+   # soil levels
+    ( indicatorOfTypeOfLevel == 105 && ( level == 800 || level == 801 || level == 802 || level == 803 )) ||
+   # sea ice
+    (indicatorOfTypeOfLevel == 105 && ( level == 731 || level == 732 || level == 733 || level == 734 )) ||
+   # sea level 
+    ( indicatorOfTypeOfLevel == 102 &&  level == 0 ) ||
+   # TOA 
+    ( indicatorOfTypeOfLevel == 008 ) ||
+   # static
+    ( indicatorOfTypeOfLevel == 103 )
+   ){ 
+
+   switch (step) {
+     case 0:  transient type2 = 'an';
+     default: transient type2 = 'fc';
+   }
+
+   switch (ltype) {
+     case 0:  set flev = 'sfc';
+     case 1:  set flev = 'soil';
+     default: set flev = 'xxx';
+   }
+
+    switch (param) {
+
+        case  15.253: set param2 = 121;      # Maximum 2m t
+        case  16.253: set param2 = 122;      # Minimum 2m t
+
+        case  31.253: set param2 = 260260;      # 10m wind dir
+        case  32.253: set param2 = 207;	        # 10m wind speed
+        case 228.253: set param2 = 49;          # 10m wind gust speed
+
+        case  33.253: set param2 = 165;          # U-component of wind
+        case  34.253: set param2 = 166;          # V-component of wind
+
+        case 162.253: set param2 = 260066;      # U-component of wind gust
+        case 163.253: set param2 = 260067;      # V-component of wind gust
+
+        case  61.253: set param2 = 228228;      # total precip
+        case  54.253: set param2 = 137;	        # total column water
+
+        case 181.253: set param2 = 99999;       # accumulated rainfall amount
+        case 184.253: set param2 = 99999;       # accumulated snowfall amount
+        case 201.253: set param2 = 99999;       # accumulated graupel amount
+        case 185.253: set param2 = 99999;       # accumulated total solid precipitation
+        case 161.253: set param2 = 99999;       # Hail diagnostics
+        case 144.253: set param2 = 99999;       # precipitation type
+        
+        case 140.253: set param2 = 99999;       # normal integrated direct irradiance at surface
+        case 113.253: set param2 = 99999;       # ToA shortwave radiation net
+        case 114.253: set param2 = 99999;       # ToA longwave radiation net
+
+        case 116.253: set param2 = 260264;    	# Direct short-wave radiation flux at the surface
+        case 115.253: set param2 = 175;         # Surface thermal radiation downwards
+        case 112.253: set param2 = 177;     	# Surface net thermal radiation
+        case 111.253: set param2 = 176;     	# Surface net solar radiation
+        case 117.253: set param2 = 169;     	# Surface solar radiation downwards
+        
+ 
+        case 124.253: set param2 = 99999;       # acc U-momentum flux
+        case 125.253: set param2 = 99999;       # acc V-momentumflux
+        case 132.253: set param2 = 99999;       # latent heat evaporation
+        case 244.253: set param2 = 99999;       # latent heat sublimation
+        case 245.253: set param2 = 99999;       # water Evaporation
+        case 246.253: set param2 = 99999;       # snow Sublimation
+        
+        case 20.253: set param2 = 3020;         # Visibility
+          
+        case 51.253: set param2 = 133;          # specific humidity
+
+        case 91.1: set param2 = 31;             # Sea ice fraction 
+        case 192.1: set param2 = 500070;         # sea ice thickness
+         
+        case 81.253: set param2 = 172;          # LSM 
+        case 83.253: set param2 = 173;          # Surface roughness
+        case 239.253: set param2 = 260457;      # Roughness lenght heat m
+
+        default: set param2 = -999;
+
+   }
+
+    switch (param) {
+
+        case 11.253: 
+          switch (level) {
+            case 0: set param2 = 235;         # skin t
+            case 2: set param2 = 167;         # 2t
+          }
+        default: 
+    }
+    if (param == 1.253){
+      switch (indicatorOfTypeOfLevel) {
+            case 105: set param2 = 134;         # Surface pressure
+            case 103: set param2 = 151;         # Mean sea level pressure
+       }
+    }
+
+    if ( indicatorOfTypeOfLevel == 200 ){
+      switch (param){
+        case 76.253: set param2 = 500051;    # Total Column-Integrated Cloud Water
+        case 58.253: set param2 = 500040;    # Total Column-Integrated Cloud Ice
+        case 201.253: set param2 = 500107;   # Total column integrated graupel
+#        case 186.253: set param2 = 260107;   # cloud base
+#        case 187.253: set param2 = 260108;   # cloud top    
+        default:
+      }
+    }
+
+
+    switch (param) {
+
+        case 191.1: set level = 0;
+        default:
+
+    }
+
+    switch (param) {
+
+    #    case 11.1: set parType = "soil";
+    #    case 86.1: set parType = "soil";
+#        case 71.253: set parType = "cc";
+        case 73.253: set parType = "cc";
+        case 74.253: set parType = "cc";
+        case 75.253: set parType = "cc";
+        case 61.253: set parType = "accum";
+        case 111.253: set parType = "accum";
+        case 112.253: set parType = "accum";
+        case 113.253: set parType = "accum";
+        case 114.253: set parType = "accum";
+        case 115.253: set parType = "accum";
+        case 117.253: set parType = "accum";
+        case 121.253: set parType = "accum";
+        case 122.253: set parType = "accum";
+        case 124.253: set parType = "accum";
+        case 125.253: set parType = "accum";
+        case 130.253: set parType = "accum";
+        case 131.253: set parType = "accum";
+        case 132.253: set parType = "accum";
+        case 140.253: set parType = "accum";
+        case 181.253: set parType = "accum"; # accumulated rain ?
+        case 184.253: set parType = "accum";
+        case 185.253: set parType = "accum";
+        case 201.253: set parType = "accum";
+        case 244.253: set parType = "accum";
+        case 245.253: set parType = "accum";
+        case 246.253: set parType = "accum";
+        case 128.1: set parType = "accum";
+        case 129.1: set parType = "accum";
+
+        default:
+
+    }
+
+    switch (param) {
+
+        case  16.253: set startStep = fstep;
+        case  15.253: set startStep = fstep;
+        case 228.253: set startStep = fstep;
+ 
+        default:
+    }
+
+    if ( step == 0 ) {
+
+     switch (param) {
+
+        case 61.253: set param2 = -999;
+        case 111.253: set param2 = -999;
+        case 112.253: set param2 = -999;
+        case 113.253: set param2 = -999;
+        case 114.253: set param2 = -999;
+        case 115.253: set param2 = -999;
+        case 116.253: set param2 = -999;
+        case 117.253: set param2 = -999;
+        case 121.253: set param2 = -999;
+        case 122.253: set param2 = -999;
+        case 124.253: set param2 = -999;
+        case 125.253: set param2 = -999;
+        case 130.253: set param2 = -999;
+        case 131.253: set param2 = -999;
+        case 132.253: set param2 = -999;
+        case 140.253: set param2 = -999;
+        case 181.253: set param2 = -999;
+        case 184.253: set param2 = -999;
+        case 185.253: set param2 = -999;
+        case 201.253: set param2 = -999;
+        case 244.253: set param2 = -999;
+        case 245.253: set param2 = -999;
+        case 246.253: set param2 = -999;
+
+        case  16.253: set param2 = -999;
+        case  15.253: set param2 = -999;
+        case 228.253: set param2 = -999;
+ 
+        default:
+     }
+
+    }
+
+    set centre = 82;
+    set PVPresent = 0;
+    set NV = 0;
+
+    if (debug == 1){
+      print "1:debug parType=[parType], paramId=[paramId], param=[param], param2=[param2]";
+    }
+
+    if (param2 != -999) {
+      if ( select == 1 ){
+        write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1";
+      }
+    }
+
+  }

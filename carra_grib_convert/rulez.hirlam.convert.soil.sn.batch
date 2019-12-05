@@ -1,0 +1,60 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = @select@ ;
+transient tableVer = @tableVer@ ;
+transient dtg = @dtg@ ;
+transient step = @step@ ;
+transient ltype = @ltype@ ;
+
+transient debug = 0;
+
+transient parType = "";
+transient param2 = -999;
+transient sl = -999;
+transient flev = "";
+
+if (
+   ###########################
+   # do only soil levels!
+   ###########################
+   # sfc level (800 and 810)
+    ( indicatorOfTypeOfLevel == 105 && ( level == 800 || level == 810 ) )
+
+    ){ 
+
+     switch (step) {
+       case 0:  transient type2 = 'an';
+       default: transient type2 = 'fc';
+     }
+
+     set flev = 'soil';
+ 
+     switch (param) {
+
+    #    case    83.1: set param2 = 173;  	# Surface roughness
+        case   191.1: set param2 = 33;  	# Snow density
+        case    13.1: set param2 = 228141;	# Snow depth water equivalent
+                     # set shortName = "sd";
+        default: set param2 = -999;
+
+     }
+
+    set level = 0;
+    set centre = 82;
+    # set table2Version = 253;
+    set PVPresent = 0;
+    set NV = 0;
+
+    if (debug == 1){
+      print "1:debug parType=[parType], paramId=[paramId], param=[param], param2=[param2]";
+    }
+
+    if (param2 != -999) {
+      if ( select == 1 ){
+        write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1sn";
+      }
+    }
+
+  }

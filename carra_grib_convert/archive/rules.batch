@@ -1,0 +1,290 @@
+########################################################################
+# Conversion of harmonie grib1 surface parameters into 
+#   uerra grib2 compliant ones
+########################################################################
+#
+# - it contains rules for grib_filter tool
+# - variables fc (=an/fc), 9 (=8/9) and /scratch/ms/no/fab0/carra_grib2 
+#   (output directory) must be parsed before running it
+#
+# How to run it:
+# - parse variables above to get the final script
+# - grib_filter <the final script name> <input grib1 files>
+#
+# Output:
+# - grib2 files in /scratch/ms/no/fab0/carra_grib2
+########################################################################
+
+transient parType = "";
+transient param2 = -999;
+transient sl1 = -999;
+
+
+transient levtype_str = "";
+
+transient debug = 1;
+
+switch (param) {
+
+    case 11.253: 
+      switch (level) {
+        case 0: set param2 = 235;       # skin t
+        case 2: set param2 = 167;       # 2t
+      }
+    case 1.253: 
+      switch (indicatorOfTypeOfLevel) {
+        case 103: set param2 = 151;     # mean sea level pressure
+        case 105: set param2 = 134;     # surface pressure
+        default: set param2 = -999;
+      }
+
+    case     7.3: set param2 = 228002;  # orography
+    case  52.253: set param2 = 260242;  # relative humidity
+#    case  51.253: set param2 = 133;     # specific humidity
+    case  15.253: set param2 = 201;     # maximum 2m t
+    case  16.253: set param2 = 202;     # minimum 2m t
+
+    case  31.253: set param2 = 260260;  # 10m wind dir
+    case  32.253: set param2 = 207;     # 10m wind speed
+#    case 228.253: set param2 = 49;      # 10m wind gust speed
+    case  33.253: set param2 = 165;     # U-wind
+    case  34.253: set param2 = 166;     # V-wind
+#    case 162.253: set param2 = 260066;  # U-wind gust
+#    case 163.253: set param2 = 260067;  # V-wind gust
+
+    case  61.253: set param2 = 228228;	# total precip
+                  set parType = "accum";
+    case 144.253: set param2 = 260015;  # precip_type
+                  set parType = "cc";
+    case  54.253: set param2 = 260057;     # total column water vapour
+#    case  58.253: set param2 = 79;     # vertical integrated cloud ice
+#    case  76.253: set param2 = 78;     # vertical integrated cloud liquid water
+
+
+    case  84.253: set param2 = 260509;  # albedo 
+
+    case 116.253: set param2 = 260264;  # direct short-wave radiation flux at the surface
+                  set parType = "accum";
+    case 245.253: set param2 = 260259;  # evaporation
+                  set parType = "accum";
+    case 115.253: set param2 = 175; 	# surface thermal radiation downwards
+                  set parType = "accum";
+    case 112.253: set param2 = 177; 	# surface net thermal radiation
+                  set parType = "accum";
+    case 111.253: set param2 = 176;     # surface net solar radiation
+                  set parType = "accum";
+    case 130.253: set param2 = 260091;  # net short wave clear sky
+                  set parType = "accum";
+    case 131.253: set param2 = 260100; # net long wave clear sky
+                  set parType = "accum";
+    case 113.253: set param2 = 260086;  # TOA net short wave 
+                  set parType = "accum";
+    case 114.253: set param2 = 260096;  # TOA net long wave 
+                  set parType = "accum";
+
+
+    case 121.1: set param2 = 147; 	# surface latent heat flux
+                set parType = "accum";
+#    case 122.253: set param2 = 146; 	# surface sensible heat flux
+#                  set parType = "accum";
+    case 117.253: set param2 = 169; 	# surface solar radiation downwards
+                  set parType = "accum";
+
+#    case 140.253: set param2 = ; # direct normal solar irradiance
+#    case 181.253: set param2 = ; # Rain
+#    case 184.253: set param2 = ; # Snow
+#    case 201.253: 
+#       switch (indicatorOfTypeOfLevel) {
+#            case 200: set param2 = ;     # column integrated
+#            case 105: set param2 = ;     # accumulated graupel
+#            default: set param2 = -999;
+#        }
+#
+#                  
+
+    case  20.253: set param2 = 3020;   # visibility
+                  set parType = "surface";
+    case  71.253: 
+         if ( indicatorOfTypeOfLevel == 109 && level == 65 ) {
+              set param2 = 201056;  #fog
+          } else {
+              if ( indicatorOfTypeOfLevel == 105 && level == 0 ){
+                set param2 = 228164;	# total cloud cover
+                set parType = "cc";
+              }
+          }
+    case  73.253: set param2 = 3073;	# low cloud cover
+                  set parType = "cc";
+    case  74.253: set param2 = 3074;	# medium cloud cover
+                  set parType = "cc";
+    case  75.253: set param2 = 3075;	# high cloud cover
+                  set parType = "cc";
+    case 186.253: set param2 = 260107;  # cloud base
+                  set parType = "cc";
+    case 187.253: set param2 = 260108;  # cloud top
+                  set parType = "cc";
+    
+
+#    case 125.253: set param2 = ; # Momentum flux u-component
+#                  set parType = "accum";
+#    case 124.253: set param2 = ; # Momentum flux v-component
+#                  set parType = "accum";
+#    case 132.253: set param2 = ; # Latent heat flux through evaporation
+#                  set parType = "accum";
+#    case 244.253: set param2 = ; # Latent Heat Sublimation
+#                  set parType = "accum";
+#    case 245.253: set param2 = ; # Water evaporation
+#                  set parType = "accum";
+#    case 246.253: set param2 = ; # Snow Sublimation
+#                  set parType = "accum";
+
+
+
+    case  66.253: set param2 = 228141;	# snow depth water equivalent
+#    case 184.253: set param2 = ;	# snow fall water equivalent
+#                  set parType = "accum";
+    case 191.253: set param2 = 33;  	# snow density
+    case 91.1: set param2 = 31;         # Sea ice fraction
+               set parType = "surface";
+    case 92.1: set param2 =  174098; #3092;     # sea ice thickness
+    case 128.1: set param2 = 174008	; # runoff
+                set parType = "acc";
+    case 129.1: set param2 = 260430 ; # percolation
+                set parType = "acc";
+                #set parType = "soil_layer";
+
+    case 11.1: #set param2 = 260360;  # soil temp
+      switch (indicatorOfTypeOfLevel) {
+        case 102: set param2 = 34;       # SST
+                  set parType = "surface";
+#        case 105:    NOT CORRECT! ends up as hl
+#          switch (level) {
+#            case 731: set param2 = 35;     # ice temp l1
+#            case 732: set param2 = 36;     # l2
+#            case 733: set param2 = 37;     # l3
+#            case 734: set param2 = 38;     # l4
+#            default:
+#          }
+        default:
+      }
+            #set parType = "soil_level";
+    case    86.1: set param2 = 260199;  # volumetric soil moisture
+                  set parType = "soil_layer";
+                  
+                  transient level_prev = level - 1;
+
+    case  81.253: set param2 = 172; 	# land-sea mask
+    case  83.253: set param2 = 173; 	# surface roughness
+#   case 239.253: set param2 = ;  # surface roughness of heat
+
+    default: set param2 = -999;
+
+}
+
+
+
+
+if (debug==1){
+  print "1:debug parType=[parType], levtype=[levtype],  paramId=[paramId], param=[param], param2=[param2]";
+}
+
+if (param2 != -999) {
+
+  ################# major start ###################
+  if (LoV < 0) {
+    set LoV = 360000 + LoV; # GRIB1 angles are in millidegrees
+  }
+  
+  set centre = "ecmf"; # generaly used hack for conversion..
+  set paramId = 130; # another generaly usable hack.. (neccessary when grib2 def does not exist at all)
+
+  set edition = 2;
+  
+ 
+  set paramId = param2;
+  
+  # some special set up for some special groups of params..
+  switch (parType) {
+   case "soil_level":
+     set paramId = param2;
+     set typeOfFirstFixedSurface = 151;
+     set scaleFactorOfFirstFixedSurface = 0;
+     set scaledValueOfFirstFixedSurface = level;
+     set typeOfSecondFixedSurface = 255;
+     set scaleFactorOfSecondFixedSurface = MISSING;
+     set scaledValueOfSecondFixedSurface = MISSING;
+   case "soil_layer":
+     set typeOfFirstFixedSurface = 151;
+     set scaleFactorOfFirstFixedSurface = 0;
+     set scaledValueOfFirstFixedSurface = level_prev;
+     set typeOfSecondFixedSurface = 151;
+     set scaleFactorOfSecondFixedSurface = 0;
+     set scaledValueOfSecondFixedSurface = level;
+   case "cc":
+     # lcc/mcc/hcc
+     set typeOfFirstFixedSurface = 1; # by default it is 103!
+     set scaleFactorOfFirstFixedSurface = MISSING;
+     set scaledValueOfFirstFixedSurface = MISSING;
+     set typeOfSecondFixedSurface = 8;
+     set scaleFactorOfSecondFixedSurface = MISSING;
+     set scaledValueOfSecondFixedSurface = MISSING;
+   case "accum":
+     set scaleFactorOfFirstFixedSurface = MISSING;
+     set scaledValueOfFirstFixedSurface = MISSING;
+     set typeOfStatisticalProcessing = 1;
+   case "surface":
+     set typeOfFirstFixedSurface = 1;
+   default:
+     print "No special set up for parType=[parType]";
+  }
+  # some special set up needed for some params..
+  if (param2==260509 || param2==33 || param2==173 || param2==3066 || param2==174008){
+   set typeOfFirstFixedSurface = 1; # by default it is 103!
+  }
+
+  if (typeOfFirstFixedSurface==1 || typeOfFirstFixedSurface==177 || typeOfFirstFixedSurface==101){
+    set scaleFactorOfFirstFixedSurface = MISSING;
+    set scaledValueOfFirstFixedSurface = MISSING;
+  }
+  # set up finish
+  set centre = "enmi";
+  set productionStatusOfProcessedData = 9;
+  set tablesVersion = 17;
+  set type = "fc";
+
+  if (parType is "accum") {
+    set stepType = "accum";
+  }
+
+  if (parType is "soil_layer") {
+  # this is intentional hack!
+  #   this set up must be repeated here otherwise scaledValueOfFirstFixedSurface will equal to level!!
+    set typeOfFirstFixedSurface = 151;
+    set scaleFactorOfFirstFixedSurface = 0;
+    set scaledValueOfFirstFixedSurface = level_prev;
+  }
+
+  ################# major end #####################
+  # some checks..
+  assert(stream is "oper");
+  assert(type is "fc");
+#  assert(is_uerra==1);
+#  assert(is_precise==1);
+  assert(productionStatusOfProcessedData==9);
+
+  set levtype_str = levtype;
+  if (levtype == 177){
+    # JIRA issue GRIB-871
+    set levtype_str = "sfc";
+  }
+  if (levtype == 151){
+    # JIRA issue GRIB-871
+    set levtype_str = "sol";
+  }
+  if (debug == 1){
+    print "[param]";
+  }
+  print "[param] [levtype] [levtype_str] [level]";
+  append"/scratch/ms/no/fab0/carra_grib2/[type].[date].[time].[levtype_str].grib2";
+
+}

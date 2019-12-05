@@ -1,0 +1,75 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = @select@ ;
+transient tableVer = @tableVer@ ;
+transient dtg = @dtg@ ;
+transient step = @step@ ;
+transient ltype = @ltype@ ;
+
+transient debug = 0;
+
+transient parType = "";
+transient param2 = -999;
+transient sl = -999;
+transient flev = "";
+
+if (
+   ###########################
+   # do only surface levels!
+   ###########################
+   # sfc level 
+    ( indicatorOfTypeOfLevel == 105 && level == 0 ) 
+
+    ){ 
+
+
+   switch (step) {
+     case 0:  transient type2 = 'an';
+     default: transient type2 = 'fc';
+   }
+
+   switch (ltype) {
+     case 0:  set flev = 'sfc';
+     case 1:  set flev = 'soil';
+     default: set flev = 'xxx';
+   }
+
+    switch (param) {
+
+        case  71.253: set param2 = 228164;	# Total cloud cover
+        case  73.253: set param2 = 3073;	# Low cloud cover
+        case  74.253: set param2 = 3074;	# Medium cloud cover
+        case  75.253: set param2 = 3075;	# High cloud cover
+
+        default: set param2 = -999;
+
+    }
+
+    switch (param) {
+
+        case 71.253: set parType = "cc";
+        case 73.253: set parType = "cc";
+        case 74.253: set parType = "cc";
+        case 75.253: set parType = "cc";
+
+        default:
+
+    }
+
+    set centre = 82;
+    set PVPresent = 0;
+    set NV = 0;
+
+    if (debug == 1){
+      print "1:debug parType=[parType], paramId=[paramId], param=[param], param2=[param2]";
+    }
+
+    if (param2 != -999) {
+      if ( select == 1 ){
+        write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1c";
+      }
+    }
+
+  }

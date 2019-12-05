@@ -1,0 +1,69 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = @select@ ;
+transient tableVer = @tableVer@ ;
+transient dtg = @dtg@ ;
+transient step = @step@ ;
+transient ltype = @ltype@ ;
+
+transient debug = 0;
+
+transient param2 = -999;
+transient type2 = "";
+transient flev = "";
+
+if (
+   ###########################
+   # do only vertical levels!
+   ###########################
+
+   # model level
+    ( indicatorOfTypeOfLevel == 109 && level == 65 || 
+      indicatorOfTypeOfLevel == 105  ||
+      indicatorOfTypeOfLevel == 200)
+
+    ){ 
+
+   switch (step) {
+     case 0:  set type2 = 'an';
+     default: set type2 = 'fc';
+   }
+
+   switch (ltype) {
+     case 0:  set flev = 'sfc';
+     case 1:  set flev = 'soil';
+     case 2:  set flev = 'ml';
+     case 3:  set flev = 'pl';
+     case 4:  set flev = 'hl';
+     default: set flev = 'xxx';
+   }
+
+   switch (param) {
+          
+      case 71.253: 
+        if (indicatorOfTypeOfLevel == 109){
+          set param2 = 666; # Fog
+        }
+      case 186.253: set param2 = 260107; # cloud base
+      case 187.253: set param2 = 260108; # cloud top
+      case 130.253: set param2 = 260091; # net sw clear sky
+      case 131.253: set param2 = 260100; # net lw clear sky
+      
+      default:     set param2 = -999;
+   }
+
+   set centre = 82;
+
+   if (debug == 1){
+      print "1:debug indicatorOfTypeOfLevel=[indicatorOfTypeOfLevel:l] level=[level] levtype=[levtype] paramId=[paramId] param=[param] param2=[param2]";
+   }
+
+   if (param2 != -999) {
+     if ( select == 1 ){
+        write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1full";
+     }
+   }
+
+ }

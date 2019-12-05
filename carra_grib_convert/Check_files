@@ -1,0 +1,100 @@
+#!/bin/bash
+set -ax 
+
+iy=$1
+im=$2
+id=$3
+ih=$4
+
+inpdir=/scratch/ms/no/fab0/carra_grib/ # hirlam input files
+
+if (( $ih == 00 || $ih == 12 )) ; then
+  steps="000 001 002 003 004 005 006 009 012 015 018 021 024 027 030"
+else
+  steps="000 001 002 003 004 005 006"
+fi
+
+steps_sfx="000 001 002 003 004 005 006"
+
+
+## !
+steps="000 001 002 003"
+steps_sfx="000 003"
+
+dtg=$iy$im$id$ih
+
+#file_ba=$inpdir/ba$dtg+000grib
+file_ba=$inpdir/fc$dtg+000grib
+
+nn=0
+while [[ ! -f $file_ba ]]
+do
+  (( nn=$nn+1 ))
+   if (( $nn < 1200 ))
+   then
+      sleep 30
+   else
+      echo  "\tFile $file_ba not found \n\t$(date)"
+      exit -1
+   fi
+done
+
+file_fc=$inpdir/fc$dtg+000grib
+
+nn=0
+while [[ ! -f $file_fc ]]
+do
+  (( nn=$nn+1 ))
+   if (( $nn < 1200 ))
+   then
+      sleep 30
+   else
+      echo  "\tFile $file_fc not found \n\t$(date)"
+      exit -1
+   fi
+done
+
+
+for step in $steps
+do
+echo $step
+file_fc=$inpdir"/fc"$dtg"+"$step"grib_fp"
+
+nn=0
+while [[ ! -f $file_fc ]]
+do
+  (( nn=$nn+1 ))
+   if (( $nn < 1200 ))
+   then
+      sleep 30
+   else
+      echo  "\tFile $file_fc not found \n\t$(date)"
+      exit -1
+   fi
+done
+
+done
+
+for step in $steps_sfx
+do
+
+file_fcx=$inpdir"/fc"$dtg"+"$step"grib_sfx"
+
+nn=0
+while [[ ! -f $file_fcx ]]
+do
+  (( nn=$nn+1 ))
+   if (( $nn < 1200 ))
+   then
+      sleep 30
+   else
+      echo  "\tFile $file_fcx not found \n\t$(date)"
+      exit -1
+   fi
+done
+
+done
+
+exit 0
+
+

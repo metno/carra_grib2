@@ -1,0 +1,58 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = @select@ ;
+transient tableVer = @tableVer@ ;
+transient dtg = @dtg@ ;
+transient step = @step@ ;
+transient ltype = @ltype@ ;
+
+transient debug = 0;
+
+transient param2 = -999;
+transient type2 = "";
+transient flev = "";
+
+if (
+   ###########################
+   # do only vertical levels!
+   ###########################
+
+   # ml level
+    ( indicatorOfTypeOfLevel == 109 )){ 
+
+   switch (step) {
+     case 0:  set type2 = 'an';
+     default: set type2 = 'fc';
+   }
+
+
+   set flev = 'ml';
+
+   switch (param) {
+          
+      case 76.253: set param2 = 246;    # specific cloud liquid water content
+      case 58.253: set param2 = 247;    # specific cloud ice water content
+
+      default:     set param2 = -999;
+   }
+   if (step > 2){
+      set param2 = -999;
+   }
+
+   set centre = 82;
+   set PVPresent = 0;
+   set NV = 0;
+
+   if (debug == 1){
+      print "1:debug indicatorOfTypeOfLevel=[indicatorOfTypeOfLevel:l] level=[level] levtype=[levtype] paramId=[paramId] param=[param] param2=[param2]";
+   }
+
+   if (param2 != -999) {
+     if ( select == 1 ){
+        write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1cl";
+     }
+   }
+
+  }

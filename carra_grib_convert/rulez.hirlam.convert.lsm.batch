@@ -1,0 +1,53 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = @select@ ;
+transient tableVer = @tableVer@ ;
+transient dtg = @dtg@ ;
+transient date = @date@ ;
+transient time = @time@ ;
+transient step = @step@ ;
+transient ltype = @ltype@ ;
+
+transient debug = 0;
+
+transient parType = "";
+transient param2 = -999;
+transient sl = -999;
+transient flev = "";
+
+if ( indicatorOfTypeOfLevel == 105 && level == 0 ){ 
+
+   transient type2 = 'an';
+
+   set flev = 'sfc';
+
+    switch (param) {
+        case 81.253: set param2 = 172; 	# LSM
+                     set shortName = 'lsm';
+        case 83.253: set param2 = 173;  # surf roughness
+        case 239.253: set param2 = 	260457; # surf roughness heat [m]
+        default: set param2 = -999;
+    }
+
+    set centre = 82;
+    set typeOfLevel = 'heightAboveGround';
+#    set shortName = 'lsm';
+    set dataDate = @date@;
+    set dataTime = @time@;
+    set table2Version = 253;
+    set PVPresent = 0;
+    set NV = 0;
+
+    if (debug == 1){
+      print "1:debug parType=[parType], paramId=[paramId], param=[param], param2=[param2]";
+    }
+
+    if (param2 != -999) {
+      if ( select == 1 ){
+        write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1lsm";
+      }
+    }
+
+  }

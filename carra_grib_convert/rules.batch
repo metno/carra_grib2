@@ -1,0 +1,58 @@
+#######################################
+# grib_api used must be >= 1.15.0!!
+#######################################
+
+transient select = 1 ;
+transient tableVer = 16 ;
+transient dtg = 2014030200 ;
+transient step = 030 ;
+transient ltype = 4 ;
+
+transient debug = 0;
+
+transient param2 = -999;
+transient type2 = "";
+transient flev = "";
+
+if (
+   ###########################
+   # do only vertical levels!
+   ###########################
+
+   # height level
+    ( indicatorOfTypeOfLevel == 105 && 
+	 ( 
+	   level == 15 || level == 30 || level == 50 || level == 75 || level == 100 ||
+	   level == 150 || level == 200 || level == 250 || level == 300 ||
+           level == 400 || level == 500 )))
+    { 
+
+
+    switch (step) {
+      case 0:  set type2 = 'an';
+      default: set type2 = 'fc';
+    }
+
+    set flev = 'hl';
+
+    switch (param) {
+          
+      case 52.253: set param2 = 157;    # relative humidity
+      default:     set param2 = -999;
+    }
+
+    set centre = 82;
+    set PVPresent = 0;
+    set NV = 0;
+
+    if (debug == 1){
+      print "1:debug indicatorOfTypeOfLevel=[indicatorOfTypeOfLevel:l] level=[level] levtype=[levtype] paramId=[paramId] param=[param] param2=[param2]";
+    }
+
+    if (param2 != -999) {
+      if ( select == 1 ){
+        write "/scratch/ms/no/fab0/carra_grib/[type2]_[flev]_2014030200_030.grib1r";
+      }
+    }
+
+}

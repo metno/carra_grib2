@@ -1,0 +1,18 @@
+1) create $home directory and set it up in doit.hirlam.sh file
+
+2) create $home/bin directory and move all files below there:
+archive-hirlam.batch  
+doit.hirlam.sh  
+rules.hirlam.convert.sl.batch  
+rules.hirlam.convert.vl.batch  
+uerra-eswi.tree.reference.out
+
+3) harmonie grib1 processing for given date:
+set up $date in doit.hirlam.sh
+set up corresponding $inpdir and $outdir with input and output data for the given $date
+set up convert=1 for grib1 files from $inpdir conversion to grib2
+set up archive=1 for grib2 files archiving from $outdir(outputs from the previous step)
+from any work directory run the main script e.g.:
+  $home/bin/doit.hirlam.sh > doit.hirlam.out 2>&1
+verify that the archived field list and count are equal to their reference 
+  (i.e. uerra-eswi.tree.reference.out and archived_expected defined in doit.hirlam.sh)
