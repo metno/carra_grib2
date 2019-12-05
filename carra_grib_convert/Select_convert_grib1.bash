@@ -13,6 +13,8 @@ echo carrabin= $carrabin
 
 $carrabin/Select_uerra.ksh || exit 1
 
+$carrabin/Select_uerra_canari.ksh || exit 1
+
 $carrabin/Select_uerra_full.ksh || exit 1
 
 $carrabin/Select_uerra_oro.ksh || exit 1 

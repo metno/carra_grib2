@@ -52,8 +52,12 @@ for step in $steps ; do
     elif [[ "$level" == "hl" ]] ; then
        frules=rulesr.hirlam.convert.hl.batch
     fi
-
-    infile=$inpdir"/fc"$dtg"+"$step"grib_fp"
+    
+    if [[ "level" == "sfc" && "$step" == "000" ]]; then
+      infile=$inpdir"/sa"$dtg"+"$step"grib"
+    else
+      infile=$inpdir"/fc"$dtg"+"$step"grib_fp"
+    fi
 
     echo $infile  
  

@@ -62,6 +62,7 @@ for type in $types ; do
     elif [[ "$level" == "sfc" ]] ; then
 
      cat ${type}_${level}_${dtg}_${step}.grib1      >>$out2/${type}_${level}_${dtg}.grib1
+     cat ${type}_${level}_${dtg}_${step}.grib1canari >>$out2/${type}_${level}_${dtg}.grib1
      cat ${type}_${level}_${dtg}_${step}.grib1full  >>$out2/${type}_${level}_${dtg}.grib1
      cat ${type}_${level}_${dtg}_${step}.grib1oroon >>$out2/${type}_${level}_${dtg}.grib1 
      cat ${type}_${level}_${dtg}_${step}.grib1lsm   >>$out2/${type}_${level}_${dtg}.grib1 

@@ -114,7 +114,11 @@ if (
         case 11.253: 
           switch (level) {
             case 0: set param2 = 235;         # skin t
-            case 2: set param2 = 167;         # 2t
+            case 2:        # 2t
+              switch (step) {              # read from canari otherwise
+                case 0: set param2 = -999;
+                default: set param2 = 167;
+              } 
           }
         default: 
     }
