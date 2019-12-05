@@ -137,7 +137,10 @@ switch (param) {
 #                  set parType = "accum";
 
 
-
+    case 141.253:
+      if ( level == 721 ){
+        set param2 =141;                # snow depth on sea ice
+      }
     case  13.1: set param2 = 228141;	# snow depth water equivalent
 #    case 184.253: set param2 = ;	# snow fall water equivalent
 #                  set parType = "accum";

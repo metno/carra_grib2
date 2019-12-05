@@ -67,7 +67,7 @@ for type in $types ; do
      cat ${type}_${level}_${dtg}_${step}.grib1lsm   >>$out2/${type}_${level}_${dtg}.grib1 
      cat ${type}_${level}_${dtg}_${step}.grib1con   >>$out2/${type}_${level}_${dtg}.grib1
      cat ${type}_${level}_${dtg}_${step}.grib1ron   >>$out2/${type}_${level}_${dtg}.grib1
-     
+     cat ${type}_${level}_${dtg}_${step}.grib1sicesnowdepth    >>$out2/${type}_${level}_${dtg}.grib1
 
     elif [[ "$level" == "soil" ]] ; then
 
@@ -97,7 +97,8 @@ for type in $types ; do
       cat ${type}_${level}_${dtg}_${step}.grib1full  >>$out2/${type}_${level}_${dtg}.grib1
 #      cat ${type}_${level}_${dtg}_${step}.grib1evapon >>$out2/${type}_${level}_${dtg}.grib1 
       cat ${type}_${level}_${dtg}_${step}.grib1con    >>$out2/${type}_${level}_${dtg}.grib1 
-      cat ${type}_${level}_${dtg}_${step}.grib1ron    >>$out2/${type}_${level}_${dtg}.grib1 
+      cat ${type}_${level}_${dtg}_${step}.grib1ron    >>$out2/${type}_${level}_${dtg}.grib1
+      cat ${type}_${level}_${dtg}_${step}.grib1sicesnowdepth    >>$out2/${type}_${level}_${dtg}.grib1
 
      elif [[ "$level" == "pl" ]] ; then
 

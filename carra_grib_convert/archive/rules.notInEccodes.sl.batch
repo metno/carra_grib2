@@ -100,6 +100,6 @@ if (param2 != -999) {
 
 #  print "[param] [levtype] [levtype_str] [level]";
 #  set centre="enmi"
-  append"@outdir@/save.[date].[time].not_yet.grib1";
+  append"@outdir@/@type@.save.[date].[time].not_yet.grib1";
 
 }

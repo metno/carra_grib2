@@ -30,6 +30,9 @@ $carrabin/Convert_121.ksh || exit 1
 
 $carrabin/Select_uerra_sn.ksh || exit 1
 
+$carrabin/Select_uerra_sicesnow.ksh || exit 1
+$carrabin/Convert_sicesnow.ksh || exit 1
+
 $carrabin/Select_uerra_alb.ksh || exit 1
 $carrabin/Convert_alb.ksh || exit 1
 
