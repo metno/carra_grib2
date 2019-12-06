@@ -69,7 +69,15 @@ outdir=$WRK/carra_grib2 # output grib2 dir
 ############################################################
 #module unload grib_api eccodes
 #module load grib_api/1.17.0 # must be used for UERRA!
-module load eccodes/new
+
+echo $ECCODES_DEFINITION_PATH
+export ECCODES_DEFINITION_PATH=/usr/local/apps/eccodes/2.12.5/GNU/63/share/eccodes/definitions
+GRIB_DEFINITION_PATH_TMP=$GRIB_DEFINITION_PATH
+export GRIB_DEFINITION_PATH=""
+module swap gcc/6.3.0
+module unload grib_api
+module load eccodes/2.15.0
+
 #grib_info
 
 if [[ "$version" == "prod" ]] ; then
@@ -128,8 +136,15 @@ if [[ "$convert" == "1" ]] ; then
 
 fi
 
+#ES take this in later
+#rm -f $inpdir/*
+
+#ES REMOVE these later
+export GRIB_DEFINITION_PATH=$GRIB_DEFINITION_PATH_TMP
 echo stop for now 
-exit 0
+trap - 0
+exit 0 
+
 
 if [[ "$archive" == "1" ]] ; then
 
@@ -197,5 +212,13 @@ fi
 
 rm -f flist glist rules.batch mars.batch ifile
 rm -f *.grib2
+
+trap - 0
+
+#ES
+export GRIB_DEFINITION_PATH=$GRIB_DEFINITION_PATH_TMP
+
+exit
+
 
 #rm -f $outdir/*

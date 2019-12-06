@@ -40,24 +40,26 @@ fi
 #$carrabin/archive/doit.hirlam.sh $dtg
 
 echo "stop for now!"
-exit 
+trap - 0
 
-#ES
-#/bin/rm $out1/*$date*
-#/bin/rm $out2/*
-#/bin/rm $out3/*$date*
-
-
-
-datum=`date`
-
-logfile=$home/carra_grib/carra_archiving.log
-
-#echo $month";"$datum >> $logfile
-echo $ym";"$datum >> $logfile
-
-#done
-
-#rm $WDIR
-
-exit
+#exit 
+#
+##ES
+##/bin/rm $out1/*$date*
+##/bin/rm $out2/*
+##/bin/rm $out3/*$date*
+#
+#
+#
+#datum=`date`
+#
+#logfile=$home/carra_grib/carra_archiving.log
+#
+##echo $month";"$datum >> $logfile
+#echo $ym";"$datum >> $logfile
+#
+##done
+#
+##rm $WDIR
+#
+#exit
