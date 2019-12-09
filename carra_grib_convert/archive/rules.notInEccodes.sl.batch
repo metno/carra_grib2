@@ -50,6 +50,7 @@ switch (param) {
    case 131.253: set param2 = 260100;  # net long wave clear sky
    case 113.253: set param2 = 260086;  # TOA net short wave
    case 114.253: set param2 = 260096;  # TOA net long wave
+   case 141.253: set param2 = 111;     # sice snow depth perhaps 500045
    case 144.253: set param2 = 260015;  # precip_type
 
 
