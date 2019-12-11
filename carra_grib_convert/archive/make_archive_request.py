@@ -1,5 +1,3 @@
-#!/usr/bin/python3.6
-
 import eccodes as ecc
 
 
@@ -26,13 +24,17 @@ class Request(object):
 #        self.source = "%s.%s.%s.%s.grib2" % (self.type.lower(),self.date,self.hour+"00",self.levtype.lower())
 
     def write_request(self,f):
-        separator = ','
+        separator = '/'
         f.write('%s,source=%s,database=%s,\n' % (self.action,self.source,self.database))
         f.write(_line('DATE',self.date))
         f.write(_line('TIME',self.hour))
         f.write(_line('ORIGIN',self.origin.upper()))
         f.write(_line('STEP',separator.join(str(x) for x in self.step)))
-        f.write(_line('LEVELIST',separator.join(str(x) for x in self.levelist)))
+        # hack for sfc
+        if self.levtype.lower() == "sfc".lower():
+            self.expect = len(self.step)*len(self.param)
+        else:
+            f.write(_line('LEVELIST',separator.join(str(x) for x in self.levelist)))
         f.write(_line('PARAM',separator.join(str(x) for x in self.param)))
         f.write(_line('EXPVER',self.expver.lower()))
         f.write(_line('CLASS ',self.marsClass.upper()))
@@ -74,9 +76,17 @@ class RequestFromGrib(Request):
                     else:
                         print("unknown origin/suiteName")
                         exit(1)
-        self.param = set(params)
-        self.levelist = set(levels)
-        self.step = set(steps)
+
+        param = list(set(params))
+        param.sort()
+        self.param = param
+        levelist = list(set(levels))
+        levelist.sort()
+        levelist.reverse()
+        self.levelist = levelist
+        step = list(set(steps))
+        step.sort()
+        self.step = step
 
 
 

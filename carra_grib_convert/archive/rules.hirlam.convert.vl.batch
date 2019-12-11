@@ -61,7 +61,8 @@ if (param2 != -999) {
     set paramId = param2;
     set centre="enmi";
     set productionStatusOfProcessedData=@version@;
-    set tablesVersion=17;
+    set tablesVersion=23;
+    set grib2LocalSectionPresent=1;
     set type = "@type@";
     # some checks..
     assert(stream is "oper");

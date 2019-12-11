@@ -256,7 +256,8 @@ if (param2 != -999) {
   # set up finish
   set centre = "enmi";
   set productionStatusOfProcessedData = @version@;
-  set tablesVersion = 17;
+  set tablesVersion = 23;
+  set grib2LocalSectionPresent = 1;
   set type = "@type@";
 #  set origin = "enmi-haro-cae";
 #  set class = "RR";

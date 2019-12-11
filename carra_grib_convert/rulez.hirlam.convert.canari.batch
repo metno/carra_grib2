@@ -20,7 +20,7 @@ if (
    ###########################
 
    # model level
-   (   indicatorOfTypeOfLevel == 105 )
+   (   indicatorOfTypeOfLevel == 105 && level == 2 )
 
     ){ 
 

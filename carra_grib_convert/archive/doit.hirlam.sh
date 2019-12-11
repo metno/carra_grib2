@@ -43,7 +43,7 @@ types="an fc"
 ## when running first time, for testing that all is ok...use test env.
 ## set archive = 1 when all is ok for using it for real...
 # for testing purpuse only use next line, as well as version=test, a few lines down...
-archive=0
+archive=1
 ## when done with testing, comment above and use next line (uncomment first)
 #archive=1
 ##        then when all is ok set version=prod also do not forget to 
@@ -71,20 +71,33 @@ outdir=$WRK/carra_grib2 # output grib2 dir
 #module load grib_api/1.17.0 # must be used for UERRA!
 
 echo $ECCODES_DEFINITION_PATH
-export ECCODES_DEFINITION_PATH=/usr/local/apps/eccodes/2.12.5/GNU/63/share/eccodes/definitions
+export ECCODES_DEFINITION_PATH=/usr/local/apps/eccodes/2.15.0/GNU/63/share/eccodes/definitions
 GRIB_DEFINITION_PATH_TMP=$GRIB_DEFINITION_PATH
 export GRIB_DEFINITION_PATH=""
 module swap gcc/6.3.0
 module unload grib_api
+module unload eccodes
 module load eccodes/2.15.0
+module load python3/3.6.8-01
 
 #grib_info
 
 if [[ "$version" == "prod" ]] ; then
   expver=8
 elif [[ "$version" == "test" ]] ; then
-  expver=9
+  expver=10
 fi
+
+if [[ "$DOMAIN" == "CARRA_NE" ]]; then
+   origin="NO-AR-CE"
+   suiteName="no-ar-ce"
+elif [[ "$DOMAIN" == "CARRA_SW" || "$DOMAIN" == "IGB" ]];then
+   origin="NO-AR-CW"
+   suiteName="no-ar-cw"
+fi
+
+
+
 
 rm -f $outdir/*$date*.grib2
 if [[ "$convert" == "1" ]] ; then
@@ -107,7 +120,7 @@ if [[ "$convert" == "1" ]] ; then
       ls $inpdir/${type}_${levtype}_${date}*.grib1 > flist
  
       cat flist
-      sed "s|@outdir@|$outdir|g;s|@version@|$expver|g;s|@type@|$type|g " $bin/$frules > rules.batch
+      sed "s|@outdir@|$outdir|g;s|@version@|$expver|g;s|@type@|$type|g;s|@origin@|$origin|g" $bin/$frules > rules.batch
 
       for f in $(cat flist) ; do
 #        grib_info
@@ -140,10 +153,10 @@ fi
 #rm -f $inpdir/*
 
 #ES REMOVE these later
-export GRIB_DEFINITION_PATH=$GRIB_DEFINITION_PATH_TMP
-echo stop for now 
-trap - 0
-exit 0 
+#export GRIB_DEFINITION_PATH=$GRIB_DEFINITION_PATH_TMP
+#echo stop for now 
+#trap - 0
+#exit 0 
 
 
 if [[ "$archive" == "1" ]] ; then
@@ -153,16 +166,20 @@ if [[ "$archive" == "1" ]] ; then
 
   ls $outdir/*.${date}.*.grib2 > flist
   for f in $(cat flist) ; do
-    ln -fs $f .
+#    ln -fs $f .
+    grib_set "-scentre=enmi,tablesVersion=23,productionStatusOfProcessedData=10,grib2LocalSectionPresent=1,suiteName=$suiteName" $f "$(basename -- $f)"
+    tigge_check -u -c "$(basename -- $f)" || exit 1
+    python3 $bin/make_archive_request.py "$(basename -- $f)" >> archive.batch
   done
 
-  # parse actual date and mars database
-  sed "s|\$date|$date|g;s|@version@|$version|g " $bin/archive-hirlam.batch > archive.batch
 
+  mars -n -t archive.batch
 
+fi
 
-  # archive it all
-#  mars -n archive.batch
+trap - 0
+echo stop for now!
+exit
 
   [[ $? != 0 ]] && exit -1
 
@@ -174,16 +191,17 @@ if [[ "$archive" == "1" ]] ; then
 
   rm -rf tree.out cost.out
 
-mars -n << EOF
+mars -n -t << EOF
 list,
       class      = RR,
+      origin     = NO-AR-CE,
       stream     = oper,
       type       = all,
-      date       = $date,
+      DATE       = 20170109,
       time       = all,
       levtype    = all,
       origin     = enmi,
-      expver     = $version,
+      expver     = 10,
       target     = tree.out,
       hide       = file/length/offset/id/missing/cost/branch/date/hdate/month/year,
       output     = tree
