@@ -18,8 +18,13 @@ dtg=$iy$im$id$ih
 # change only this part of script
 
 # setup
+if (( $ih == 0 || $ih == 12 )) ; then
+  steps="000 001 002 003 004 005 006 009 012 015 018 021 024 027 030"
+else
+  steps="000 001 002 003"
+fi
 
-steps="001 002 003"
+#steps="001 002 003"
 
 #+++++++++++++++++++++++++++++++++++++++++++
 
