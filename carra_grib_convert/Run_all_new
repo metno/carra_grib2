@@ -35,19 +35,11 @@ else
 fi
 
 
-#date=$iy$im$id
 
-#$carrabin/archive/doit.hirlam.sh $dtg
-
-echo "stop for now!"
-trap - 0
-
-#exit 
-#
 ##ES
-##/bin/rm $out1/*$date*
-##/bin/rm $out2/*
-##/bin/rm $out3/*$date*
+#/bin/rm $out1/*$date*
+#/bin/rm $out2/*
+#/bin/rm $out3/*$date*
 #
 #
 #
@@ -60,6 +52,7 @@ trap - 0
 #
 ##done
 #
-##rm $WDIR
-#
-#exit
+rm $WDIR
+
+trap - 0
+exit

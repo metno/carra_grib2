@@ -173,9 +173,13 @@ if [[ "$archive" == "1" ]] ; then
   done
 
 
-  mars -n -t archive.batch
+  mars -n -t archive.batch || exit 1
 
 fi
+
+rm -rf $inpdir
+rm -rf $outdir
+rm -rf $WDIR
 
 trap - 0
 echo stop for now!
