@@ -1,3 +1,4 @@
+import os
 import eccodes as ecc
 
 
@@ -30,10 +31,7 @@ class Request(object):
         f.write(_line('TIME',self.hour))
         f.write(_line('ORIGIN',self.origin.upper()))
         f.write(_line('STEP',separator.join(str(x) for x in self.step)))
-        # hack for sfc
-        if self.levtype.lower() == "sfc".lower():
-            self.expect = len(self.step)*len(self.param)
-        else:
+        if self.levtype.lower() != "sfc".lower():
             f.write(_line('LEVELIST',separator.join(str(x) for x in self.levelist)))
         f.write(_line('PARAM',separator.join(str(x) for x in self.param)))
         f.write(_line('EXPVER',self.expver.lower()))
@@ -51,22 +49,26 @@ class RequestFromGrib(Request):
         self.source = gribfile
         self.action = Action
         self.parse_grib_file()
-        self.expect = len(self.step)*len(self.param)*len(self.levelist)
+#        self.expect = len(self.step)*len(self.param)*len(self.levelist)
 
     def parse_grib_file(self):
         gribfile = self.source
-        self.type,self.date,self.hour,self.levtype,grib2 = gribfile.split('.')
+        self.type,self.date,self.hour,self.levtype,grib2 = os.path.basename(gribfile).split('.')
 
         params = []
         levels = []
         steps = []
         with ecc.GribFile(gribfile) as gf:
+            nfields = len(gf)
             for i in range(len(gf)):
                 msg = ecc.GribMessage(gf)
                 params.append(msg['param'])
                 levels.append(msg['level'])
                 steps.append(msg['step'])
                 if i == 1:
+                    self.date = str(msg["dataDate"])
+                    self.hour = "%04d" % int(msg["dataTime"])
+
                     if str(msg['suiteName']) == '1':
                         self.origin = "no-ar-ce"
                     elif str(msg['suiteName']) == '2':
@@ -87,7 +89,7 @@ class RequestFromGrib(Request):
         step = list(set(steps))
         step.sort()
         self.step = step
-
+        self.expect = nfields
 
 
 def _line(key,val,eol=','):
