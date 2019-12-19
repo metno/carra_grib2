@@ -175,36 +175,34 @@ if [[ "$archive" == "1" ]] ; then
 
   mars -n -t archive.batch || exit 1
 
-fi
 
-rm -rf $inpdir
-rm -rf $outdir
-rm -rf $WDIR
-
-trap - 0
-echo stop for now!
-exit
-
-  [[ $? != 0 ]] && exit -1
-
-  #########
-  # check 
-
-  # Verify that the expected number of fields ($archived_expected) were archived and the MARS field list 
-  #   for actual day is the same as the reference one ($tree_ref)
-
-  rm -rf tree.out cost.out
-
-mars -n -t << EOF
+  rm -rf $inpdir
+  rm -rf $outdir
+  rm -rf $WDIR
+  
+  trap - 0
+  echo stop for now!
+  exit
+  
+    [[ $? != 0 ]] && exit -1
+  
+    #########
+    # check 
+  
+    # Verify that the expected number of fields ($archived_expected) were archived and the MARS field list 
+    #   for actual day is the same as the reference one ($tree_ref)
+  
+    rm -rf tree.out cost.out
+  
+  mars -n -t << EOF
 list,
       class      = RR,
       origin     = NO-AR-CE,
       stream     = oper,
       type       = all,
-      DATE       = 20170109,
-      time       = all,
+      DATE       = $date,
+      time       = ${hh}00,
       levtype    = all,
-      origin     = enmi,
       expver     = 10,
       target     = tree.out,
       hide       = file/length/offset/id/missing/cost/branch/date/hdate/month/year,
@@ -212,19 +210,25 @@ list,
 
 list,
       class      = RR,
-      hide       = file/length/offset/id/missing/cost/branch/param/levtype/levelist/expver/type/class/stream/origin/date/time/step/number/hdate/month/year,
+      hide       = file/length/offset/id/missing/cost/branch/param/levtype/levelist/expver/type/class/stream/origin/date/time/step/number/hdate/month/year/time,
       target     = cost.out,
       output     = table
 EOF
 
-  archived_expected=13804
+  if [[ "$hh" == "00" -o "$hh" == "12" ]]; then
+    archived_expected=8662
+    fclen="long"
+  else
+    archived_expected=3877
+    fclen="short"
+  fi
   archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
   if [[ "$archived != "$archived_expected"" ]] ; then
     exit -1
     echo "$date: Different number of fields archived than expected: $archived ($archived_expected)!"
   fi
-
-  tree_ref=$bin/uerra-eswi.tree.reference.out
+  
+  tree_ref=$bin/carra-${suiteName}-${fclen}.tree.reference.out
   if [[ $(diff $tree.out $tree_ref) ]] ; then
     echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs!"
     exit -1
