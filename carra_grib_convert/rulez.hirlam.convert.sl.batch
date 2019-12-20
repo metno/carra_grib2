@@ -194,40 +194,43 @@ if (
         default:
     }
 
-    if ( step == 0 ) {
-
-     switch (param) {
-
-        case 61.253: set param2 = -999;
-        case 111.253: set param2 = -999;
-        case 112.253: set param2 = -999;
-        case 113.253: set param2 = -999;
-        case 114.253: set param2 = -999;
-        case 115.253: set param2 = -999;
-        case 116.253: set param2 = -999;
-        case 117.253: set param2 = -999;
-        case 121.253: set param2 = -999;
-        case 122.253: set param2 = -999;
-        case 124.253: set param2 = -999;
-        case 125.253: set param2 = -999;
-        case 130.253: set param2 = -999;
-        case 131.253: set param2 = -999;
-        case 132.253: set param2 = -999;
-        case 140.253: set param2 = -999;
-        case 181.253: set param2 = -999;
-        case 184.253: set param2 = -999;
-        case 185.253: set param2 = -999;
-        case 201.253: set param2 = -999;
-        case 244.253: set param2 = -999;
-        case 245.253: set param2 = -999;
-        case 246.253: set param2 = -999;
-
-        case  16.253: set param2 = -999;
-        case  15.253: set param2 = -999;
-        case 228.253: set param2 = -999;
- 
-        default:
-     }
+    if ( step == 0 && timeRangeIndicator == 4) {
+       set param2 = -999;
+#     switch (param) {
+#
+#        case 61.253: set param2 = -999;
+#        case 111.253: set param2 = -999;
+#        case 112.253: set param2 = -999;
+#        case 113.253: set param2 = -999;
+#        case 114.253: set param2 = -999;
+#        case 115.253: set param2 = -999;
+#        case 116.253: set param2 = -999;
+#        case 117.253: set param2 = -999;
+#        case 121.253: set param2 = -999;
+#        case 122.253: set param2 = -999;
+#        case 124.253: set param2 = -999;
+#        case 125.253: set param2 = -999;
+#        case 130.253: set param2 = -999;
+#        case 131.253: set param2 = -999;
+#        case 132.253: set param2 = -999;
+#        case 140.253: set param2 = -999;
+#        case 181.253: set param2 = -999;
+#        case 184.253: set param2 = -999;
+#        case 185.253: set param2 = -999;
+#        case 201.253: 
+#           switch (typeOfLevel){
+#              case 105: set param2 = -999;
+#              default:
+#        case 244.253: set param2 = -999;
+#        case 245.253: set param2 = -999;
+#        case 246.253: set param2 = -999;
+#
+#        case  16.253: set param2 = -999;
+#        case  15.253: set param2 = -999;
+#        case 228.253: set param2 = -999;
+# 
+#        default:
+   #  }
 
     }
 

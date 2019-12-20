@@ -62,22 +62,32 @@ switch (param) {
             default: set param2 = -999;
         }
 
+
+
                 
-    case 11.1: #set param2 = 260360;  # soil temp
+   case 11.1: #set param2 = 260360;  # soil temp
       switch (indicatorOfTypeOfLevel) {
         case 105: #   NOT CORRECT! ends up as hl
           switch (level) {
-            case 731: set param2 = 35;     # ice temp l1
-            case 732: set param2 = 36;     # l2
-            case 733: set param2 = 37;     # l3
-            case 734: set param2 = 38;     # l4
-            default:
+             case 731: set param2 = 35;     # ice temp l1
+             case 732: set param2 = 36;     # l2
+             case 733: set param2 = 37;     # l3
+             case 734: set param2 = 38;     # l4
+             case 950: set param2 = 111;    # T2M_TEB
+             case 802: set param2 = 111;    # T2M_ISBA
+             case 760: set param2 = 111;    # T2M_SEA
+             case 772: set param2 = 111;    # T2M_WAT
+             default:
           }
         default:
       }
 
     default: set param2 = -999;
 
+}
+
+if ( ( timeRangeIndicator == 0 && indicatorOfTypeOfLevel == 105 ) && ( param == 201.253 || param == 184.253 || param == 185.253)){
+   set param2 = -999;
 }
 
 #assert(type is "@type@");

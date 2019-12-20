@@ -1,0 +1,10 @@
+class=rr,expver=prod,levtype=hl,origin=no-ar-cw,stream=oper,type=an,param=10/130/157/246/247/3031/54,levelist=100/15/150/200/250/30/300/400/50/500/75
+class=rr,expver=prod,levtype=ml,origin=no-ar-cw,stream=oper,type=an,param=130/131/132/133/246/247/260028/260155/260257/75/76,levelist=1/10/11/12/13/14/15/16/17/18/19/2/20/21/22/23/24/25/26/27/28/29/3/30/31/32/33/34/35/36/37/38/39/4/40/41/42/43/44/45/46/47/48/49/5/50/51/52/53/54/55/56/57/58/59/6/60/61/62/63/64/65/7/8/9
+class=rr,expver=prod,levtype=pl,origin=no-ar-cw,stream=oper,type=an,param=129/130/131/132/157/246/247/260028/260238/260257/3014/60/75/76,levelist=10/100/1000/150/20/200/250/30/300/400/50/500/600/70/700/750/800/825/850/875/900/925/950
+class=rr,expver=prod,levtype=sfc,origin=no-ar-cw,stream=oper,type=an,param=134/151/165/166/167/172/173/174008/207/228002/228141/228164/235/260057/260107/260108/260242/260260/260430/260509/3020/3073/3074/3075/31/34
+class=rr,expver=prod,levtype=sol,origin=no-ar-cw,stream=oper,type=an,param=260199,levelist=1/2
+class=rr,expver=prod,levtype=hl,origin=no-ar-cw,stream=oper,type=fc,step=1/2/3,param=10/130/157/246/247/3031/54,levelist=100/15/150/200/250/30/300/400/50/500/75
+class=rr,expver=prod,levtype=ml,origin=no-ar-cw,stream=oper,type=fc,step=1/2,param=130/131/132/133/246/247/260028/260155/260257/75/76,levelist=1/10/11/12/13/14/15/16/17/18/19/2/20/21/22/23/24/25/26/27/28/29/3/30/31/32/33/34/35/36/37/38/39/4/40/41/42/43/44/45/46/47/48/49/5/50/51/52/53/54/55/56/57/58/59/6/60/61/62/63/64/65/7/8/9
+class=rr,expver=prod,levtype=pl,origin=no-ar-cw,stream=oper,type=fc,step=1/2/3,param=129/130/131/132/157/246/247/260028/260238/260257/3014/60/75/76,levelist=10/100/1000/150/20/200/250/30/300/400/50/500/600/70/700/750/800/825/850/875/900/925/950
+class=rr,expver=prod,levtype=sfc,origin=no-ar-cw,stream=oper,type=fc,step=1/2/3,param=134/146/147/151/165/166/167/169/174008/175/176/177/201/202/207/228141/228164/228228/235/260057/260107/260108/260242/260259/260260/260264/260430/260509/3020/3073/3074/3075/31/34
+class=rr,expver=prod,levtype=sol,origin=no-ar-cw,stream=oper,type=fc,param=260199,levelist=1/2,step=1/2/3

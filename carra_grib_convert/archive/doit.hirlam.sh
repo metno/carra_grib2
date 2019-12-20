@@ -180,9 +180,6 @@ if [[ "$archive" == "1" ]] ; then
   rm -rf $outdir
   rm -rf $WDIR
   
-  trap - 0
-  echo stop for now!
-  exit
   
     [[ $? != 0 ]] && exit -1
   
@@ -205,7 +202,7 @@ list,
       levtype    = all,
       expver     = 10,
       target     = tree.out,
-      hide       = file/length/offset/id/missing/cost/branch/date/hdate/month/year,
+      hide       = file/length/offset/id/missing/cost/branch/date/hdate/month/year/time,
       output     = tree
 
 list,
@@ -224,25 +221,26 @@ EOF
   fi
   archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
   if [[ "$archived != "$archived_expected"" ]] ; then
-    exit -1
+    exit 1
     echo "$date: Different number of fields archived than expected: $archived ($archived_expected)!"
   fi
   
   tree_ref=$bin/carra-${suiteName}-${fclen}.tree.reference.out
   if [[ $(diff $tree.out $tree_ref) ]] ; then
     echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs!"
-    exit -1
+    exit 1
   fi
 
 fi
 
 rm -f flist glist rules.batch mars.batch ifile
-rm -f *.grib2
+#rm -f *.grib2
+
+
+export GRIB_DEFINITION_PATH=$GRIB_DEFINITION_PATH_TMP
 
 trap - 0
 
-#ES
-export GRIB_DEFINITION_PATH=$GRIB_DEFINITION_PATH_TMP
 
 exit
 

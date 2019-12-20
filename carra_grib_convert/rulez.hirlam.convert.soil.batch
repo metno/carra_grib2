@@ -31,6 +31,8 @@ if (
     ( indicatorOfTypeOfLevel == 105 && level == 0 ) ||
    # soil levels
     ( indicatorOfTypeOfLevel == 105 && ( level == 800 || level == 801 || level == 802 || level == 803 )) ||
+   # tile spesific
+    ( indicatorOfTypeOfLevel == 105 && ( level == 802 || level == 950 || level == 760 || level == 772 )) ||
    # sea ice
     (indicatorOfTypeOfLevel == 105 && ( level == 731 || level == 732 || level == 733 || level == 734 )) ||
    # sea level 
@@ -75,8 +77,17 @@ if (
               case 732: set param2 = 36;     # l2
               case 733: set param2 = 37;     # l3
               case 734: set param2 = 38;     # l4
-              case 800: set param2 = 9006;  # soil temp l1
+              case 800: set param2 = 111;  # soil temp l1 TG1
                         set typeOfLevel = 'depthBelowLand';      # soil temp
+              case 802: set param2 = 111;   # T2M_ISBA
+                        set typeOfLevel = 'heightAboveGround';
+              case 760: set param2 = 111;   # T2M_SEA
+                        set typeOfLevel = 'heightAboveGround';
+              case 772: set param2 = 111;   # T2M_WAT
+                        set typeOfLevel = 'heightAboveGround';
+              case 950: set param2 = 111;   # T2M_TEB
+                        set typeOfLevel = 'heightAboveGround';
+        
               case 2: set param2= -999;      # dont read t2m from sfx
               default:
             }
@@ -99,7 +110,7 @@ if (
 
         case 800: set level = 1;
         case 801: set level = 2;
-        case 802: set level = 3;
+#       case 802: set level = 2;
         case 803: set level = 3;
 
         default:
@@ -108,7 +119,7 @@ if (
 
     switch (param) {
 
-        case 11.1: set parType = "soil";
+#        case 11.1: set parType = "soil";
         case 86.1: set parType = "soil";
         case 193.1: set parType = "soil";
         case 129.1: set parType = "soil";
@@ -117,6 +128,7 @@ if (
         default:
 
     }
+   
 
     set centre = 82;
     set PVPresent = 0;

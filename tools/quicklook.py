@@ -6,7 +6,8 @@ import eccodes as ecc
 import matplotlib.pyplot as plt
 import sys
 import argparse
-
+import os
+import re
 
 def get_field(fnam,req):
     f = ecc.GribFile(fnam)
@@ -37,6 +38,27 @@ def get_field(fnam,req):
     val = ma.masked_values(np.flipud(msghit['values'].reshape((ny,nx))),msghit['missingValue'])
     return {'vals':val,'name':name}
 
+def plot_all(fnam):
+    f = ecc.GribFile(fnam)
+    dirnam = fnam + "_plots"
+    if os.path.isdir(dirnam):
+         pass
+    else:
+         os.mkdir(dirnam)
+
+    for i in range(len(f)):
+         msg = ecc.GribMessage(f)
+         nx = msg['Nx']
+         ny = msg['Ny']
+         name = msg['parameterName']
+         val = ma.masked_values(np.flipud(msg['values'].reshape((ny,nx))),msg['missingValue'])
+         plt.imshow(val,cmap="jet",interpolation="none")
+         plt.title("%s [%s] %sH%s" % (name,msg['units'],msg['date'],msg['time']))
+         plt.colorbar()
+         plt.savefig("%s/%s_%s_lvl%s_stp%s.png" % (dirnam,re.sub("( )+","_",name),msg['levelType'],msg['level'],msg['step']))
+         plt.close()
+
+
 
 def str2dict(string):
     keys = {}
@@ -51,39 +73,48 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='take a quicklook on parameter from gribfile')
     parser.add_argument('filename',type=str,help='grib file name file')
-    parser.add_argument('-w','--where',type=str,required=True,help='comma separated list of key specifier')
+    parser.add_argument('-w','--where',type=str,required=False,help='comma separated list of key specifier')
     parser.add_argument('-fd','--filediff',type=str,default=None,help='name of file to compare')
     parser.add_argument('-wd','--wherediff',type=str,default=None,help='specifier to compare')
+    parser.add_argument('-o','--output',type=str,default=None,help='output file (png)')
+    parser.add_argument('-a','--all',action="store_true",default=False,help='plot all fields')
 
     args = parser.parse_args()
     fnam = args.filename
     keys = {}
-    opts = args.where.split(',')
-    keys = str2dict(args.where)
+    try:
+        opts = args.where.split(',')
+        keys = str2dict(args.where)
+    except:
+        print("hope you run with -a/--all")
 
-    
-    field = get_field(fnam,keys)
-    
-    if args.filediff or args.wherediff:
-        diffile = fnam
-        wkeys = keys
-        if args.filediff:
-            diffile = args.filediff
-        if args.wherediff:
-            wkeys = str2dict(args.wherediff)
-        field2 = get_field(diffile,wkeys)
-
-        x = field['vals'] - field2['vals']
-        lim = np.max(np.abs(x))
-        plt.imshow(x,cmap="seismic",vmin=-lim,vmax=lim)
-        plt.title(field['name'])
-        plt.colorbar()
-        plt.show()
+    if args.all:
+        plot_all(fnam)
     else:
-        plt.imshow(field['vals'],cmap="jet")
-        plt.title(field['name'])
-        plt.colorbar()
-        plt.show()
 
+        field = get_field(fnam,keys)
+        
+        if args.filediff or args.wherediff:
+            diffile = fnam
+            wkeys = keys
+            if args.filediff:
+                diffile = args.filediff
+            if args.wherediff:
+                wkeys = str2dict(args.wherediff)
+            field2 = get_field(diffile,wkeys)
+    
+            x = field['vals'] - field2['vals']
+            lim = np.max(np.abs(x))
+            plt.imshow(x,cmap="seismic",vmin=-lim,vmax=lim)
+            plt.title(field['name'])
+        else:
+            plt.imshow(field['vals'],cmap="jet")
+            plt.title(field['name'])
+        plt.colorbar()
+        if args.output:
+            plt.savefig(args.output)
+            plt.close()
+        else:
+            plt.show() 
 
 
