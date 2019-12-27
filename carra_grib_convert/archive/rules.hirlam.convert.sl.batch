@@ -255,7 +255,7 @@ if (param2 != -999) {
   }
   # set up finish
   set centre = "enmi";
-  set productionStatusOfProcessedData = @version@;
+  set productionStatusOfProcessedData = 10; #@version@;
   set tablesVersion = 23;
   set grib2LocalSectionPresent = 1;
   set type = "@type@";
@@ -280,7 +280,7 @@ if (param2 != -999) {
   assert(type is "@type@");
 #  assert(is_uerra==1);
 #  assert(is_precise==1);
-  assert(productionStatusOfProcessedData==@version@);
+  assert(productionStatusOfProcessedData==10); #@version@);
 
   set levtype_str = levtype;
   if (levtype == 177){

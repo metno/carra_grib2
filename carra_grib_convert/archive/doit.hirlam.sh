@@ -32,6 +32,7 @@ hh=$(echo $dtg | cut -c9-10)
 
 # Convert precise fields for given $date, $type and $levtype and write them to $outdir
 convert=1
+archive=1
 levtypes="sfc pl ml hl soil"
 types="an fc"
 
@@ -43,13 +44,13 @@ types="an fc"
 ## when running first time, for testing that all is ok...use test env.
 ## set archive = 1 when all is ok for using it for real...
 # for testing purpuse only use next line, as well as version=test, a few lines down...
-archive=1
+#archive=1
 ## when done with testing, comment above and use next line (uncomment first)
 #archive=1
 ##        then when all is ok set version=prod also do not forget to 
 ##  N.B.  comment out use of tigge_check further down in the archiving part, line 101, 102
-version=test # MARS expver of PRECISE data for testing
-#version=prod # MARS expver of PRECISE data for production
+#version=test # MARS expver of PRECISE data for testing
+version=prod # MARS expver of PRECISE data for production
 
 # directory set up
 #home=$HM_LIB/carra_grib_convert/archive #/home/ms/no/fab0/carra_grib/grib/archive
@@ -83,9 +84,9 @@ module load python3/3.6.8-01
 #grib_info
 
 if [[ "$version" == "prod" ]] ; then
-  expver=8
+  expver="prod"
 elif [[ "$version" == "test" ]] ; then
-  expver=10
+  expver="test"
 fi
 
 if [[ "$DOMAIN" == "CARRA_NE" ]]; then
@@ -99,9 +100,9 @@ fi
 
 
 
-rm -f $outdir/*$date*.grib2
 if [[ "$convert" == "1" ]] ; then
 
+  rm -f $outdir/*$date*.grib2
   for type in $types ; do
     if [[ "$type" == "fc" ]] ; then
       #xlevtypes="$(echo $levtypes|sed 's/ml//g')" # uerra do not have fc/ml data
@@ -176,9 +177,9 @@ if [[ "$archive" == "1" ]] ; then
   mars -n -t archive.batch || exit 1
 
 
-  rm -rf $inpdir
-  rm -rf $outdir
-  rm -rf $WDIR
+#  rm -rf $inpdir
+#  rm -rf $outdir
+#  rm -rf $WDIR
   
   
     [[ $? != 0 ]] && exit -1
@@ -194,13 +195,14 @@ if [[ "$archive" == "1" ]] ; then
   mars -n -t << EOF
 list,
       class      = RR,
-      origin     = NO-AR-CE,
+      origin     = $origin,
       stream     = oper,
       type       = all,
       DATE       = $date,
       time       = ${hh}00,
       levtype    = all,
-      expver     = 10,
+      expver     = $version,
+      database   = marsscratch,
       target     = tree.out,
       hide       = file/length/offset/id/missing/cost/branch/date/hdate/month/year/time,
       output     = tree
@@ -212,21 +214,21 @@ list,
       output     = table
 EOF
 
-  if [[ "$hh" == "00" -o "$hh" == "12" ]]; then
+  if [[ "$hh" == "00" || "$hh" == "12" ]]; then
     archived_expected=8662
     fclen="long"
   else
-    archived_expected=3877
+    archived_expected=3883
     fclen="short"
   fi
   archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
-  if [[ "$archived != "$archived_expected"" ]] ; then
+  if [[ "$archived" != "$archived_expected" ]] ; then
     exit 1
     echo "$date: Different number of fields archived than expected: $archived ($archived_expected)!"
   fi
   
   tree_ref=$bin/carra-${suiteName}-${fclen}.tree.reference.out
-  if [[ $(diff $tree.out $tree_ref) ]] ; then
+  if [[ $(diff tree.out ${tree_ref}) ]] ; then
     echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs!"
     exit 1
   fi

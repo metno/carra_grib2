@@ -60,7 +60,7 @@ if (param2 != -999) {
     set edition=2;
     set paramId = param2;
     set centre="enmi";
-    set productionStatusOfProcessedData=@version@;
+    set productionStatusOfProcessedData=10;
     set tablesVersion=23;
     set grib2LocalSectionPresent=1;
     set type = "@type@";
@@ -69,7 +69,7 @@ if (param2 != -999) {
     assert(type is "@type@");
 #    assert(is_uerra == 1);
 #    assert(is_precise == 1);
-    assert(productionStatusOfProcessedData==@version@);
+    assert(productionStatusOfProcessedData==10);
 
     write "@outdir@/[type].[date].[time].[levtype].grib2";
 }
