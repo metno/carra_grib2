@@ -218,7 +218,7 @@ EOF
     archived_expected=8662
     fclen="long"
   else
-    archived_expected=3883
+    archived_expected=3881
     fclen="short"
   fi
   archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')

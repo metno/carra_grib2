@@ -189,14 +189,21 @@ if (
 
         case  16.253: set startStep = fstep;
         case  15.253: set startStep = fstep;
-        case 228.253: set startStep = fstep;
- 
+        case 228.253: set startStep = fstep; 
         default:
     }
 
     if ( step == 0 && timeRangeIndicator == 4) {
        set param2 = -999;
-#     switch (param) {
+    }
+
+    if ( step == 0 ) {
+      switch (param) {
+        case 15.253: set param2 = -999;
+        case 16.253: set param2 = -999;
+        default:
+      }
+    }
 #
 #        case 61.253: set param2 = -999;
 #        case 111.253: set param2 = -999;
@@ -232,7 +239,7 @@ if (
 #        default:
    #  }
 
-    }
+    
 
     set centre = 82;
     set PVPresent = 0;
@@ -241,7 +248,7 @@ if (
     if (debug == 1){
       print "1:debug parType=[parType], paramId=[paramId], param=[param], param2=[param2]";
     }
-
+    
     if (param2 != -999) {
       if ( select == 1 ){
         write "@out1@/[type2]_[flev]_@dtg@_@step@.grib1";
