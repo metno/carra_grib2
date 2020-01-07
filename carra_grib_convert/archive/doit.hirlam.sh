@@ -215,7 +215,7 @@ list,
 EOF
 
   if [[ "$hh" == "00" || "$hh" == "12" ]]; then
-    archived_expected=8662
+    archived_expected=8677
     fclen="long"
   else
     archived_expected=3881
