@@ -2,7 +2,6 @@
 
 import numpy as np
 import numpy.ma as ma
-import eccodes as ecc
 import matplotlib.pyplot as plt
 import sys
 import argparse
@@ -14,35 +13,8 @@ import datetime
 import copy
 import glob
 
-def get_field(fnam,req):
-    f = ecc.GribFile(fnam)
-    nfound = 0
-    msghit = None
-    for i in range(len(f)):
-        msg = ecc.GribMessage(f)
-        matchlist = []
-        for key in req:
-            if str(msg[key]) == str(req[key]):
-                matchlist.append(1)
-                continue
-            else:
-                break
-        if len(matchlist) == len(req):
-            if msghit:
-                print("Ambigous spesification! found more than one match")
-                print(req)
-                exit(1)
-            msghit = msg
-            nfound += 1
-    if nfound == 0:
-        print("No match!")
-        print(req)
-    nx = msghit['Nx']
-    ny = msghit['Ny']
-    name = msghit['parameterName']
-    val = ma.masked_values(np.flipud(msghit['values'].reshape((ny,nx))),msghit['missingValue'])
-    return {'vals':val,'name':name}
-
+import eccodes as ecc
+import metview as mv
 
 def str2dict(string):
     keys = {}
@@ -54,16 +26,16 @@ def str2dict(string):
 
 
 def read_vars(gribfile,params,step=0):
+    ds = {}
     vars = copy.deepcopy(params)
     f = ecc.GribFile(gribfile)
     for i in range(len(f)):
-            msg = ecc.GribMessage(f)
-            for param in vars:
-                if vars[param]['param']== msg['param'] and msg['step'] == step:
-                    print('found',vars[param])
-                    vars[param]['msg'] = msg
+        msg = ecc.GribMessage(f)
+        for param in vars:
+            if vars[param]['param']== msg['param'] and msg['step'] == step:
+                print('found',vars[param])
+                vars[param]['msg'] = msg
     for param in vars:
-        print
         msghit = vars[param]['msg']
         nx = msghit['Nx']
         ny = msghit['Ny']
@@ -85,26 +57,76 @@ def read_vars(gribfile,params,step=0):
         proj = ccrs.LambertConformal(central_latitude=lat0,
                                  central_longitude=lon0,
                                  standard_parallels=(lat1, lat2))
-        vars[param]['misc'] = {'date':dt,
-                               'lons':lons2,
-                               'lats':lats,
-                               'proj':proj,
-                               'name':name,
-                               'fcstep':fcstep}
+        ds['misc'] = {'date':dt,
+                      'lons':lons2,
+                      'lats':lats,
+                      'proj':proj,
+                      'fcstep':fcstep}
+        ds['params'] = vars
 
-    return vars
+    return ds
 
-def mslp_precip(gribfile):
-    #parameters
-    params = {'mslp':{'param':151},
-              'total_precipitation':{'param':228228}
+def request_vars(params,dt,type='an',step=0,origin='no-ar-ce',database='marsscratch'):
+    ds = {}
+    vars = copy.deepcopy(params)
+    paramlist = [vars[param]['param'] for param in vars]
+    ret = mv.retrieve(type=type,
+                      levtype='sfc',
+                      param=paramlist,
+                      date=dt.strftime("%Y-%m-%d"),
+                      expver='prod',
+                      origin=origin,
+                      class_='rr',
+                      time=dt.strftime("%H"),
+                      database=database,
+                      stream='oper',
+                      step=step)
+    #
+    x = ret.to_dataset()
+    attrs = x.variables[list(vars.keys())[0]].attrs
+    #
+    lon0 = attrs['GRIB_LoVInDegrees']
+    lat0 = attrs['GRIB_LaDInDegrees']
+    lat1 = attrs['GRIB_Latin1InDegrees']
+    lat2 = attrs['GRIB_Latin2InDegrees']
+    nx = attrs['GRIB_Nx']
+    ny = attrs['GRIB_Ny']
+    #   
+    lons = x.longitude.values
+    lats = x.latitude.values
+    #
+    lons2 = np.where(lons>180,lons-360,lons)
+    lon0 = np.where(lon0>180,lon0-360,lon0)
+    #
+    proj = ccrs.LambertConformal(central_latitude=lat0,
+                                 central_longitude=lon0,
+                                 standard_parallels=(lat1, lat2))
+    ds['misc'] = {'date':dt,
+                  'lons':lons2,
+                  'lats':lats,
+                  'proj':proj,
+                  'fcstep':step}
+    #
+    for param in vars:
+        missVal = x.variables[param].attrs['GRIB_missingValue']
+        val = ma.masked_values(x.variables[param].values,missVal)
+        vars[param]['field'] = val
+    #
+    ds['params'] = vars
+    #
+    return ds
+
+
+
+def mslp_precip(ds):
+    params = {'msl':{'param':151},
+              'tp':{'param':228228}
               }
-    vars = read_vars(gribfile,params,step=3)
-    lons = vars['mslp']['misc']['lons']
-    lats = vars['mslp']['misc']['lats']
-    proj = vars['mslp']['misc']['proj']
-    dt = vars['mslp']['misc']['date']
-    fcstep = vars['mslp']['misc']['fcstep']
+    lons = ds['misc']['lons']
+    lats = ds['misc']['lats']
+    proj = ds['misc']['proj']
+    dt = ds['misc']['date']
+    fcstep = ds['misc']['fcstep']
 
     # Plotting parameters
     pcontours = np.arange(960,1060,2)
@@ -112,8 +134,8 @@ def mslp_precip(gribfile):
     precip_colors = ['aqua','dodgerblue','blue','m','magenta','darkorange','red']
 
     # Fields to plot
-    mslp = vars['mslp']['field']/100
-    precip = vars['total_precipitation']['field']
+    mslp = ds['params']['msl']['field']/100
+    precip = ds['params']['tp']['field']
 
     fig = plt.figure(figsize=[12,9])
     ax = plt.axes(projection=proj)
@@ -138,19 +160,12 @@ def mslp_precip(gribfile):
 
     plt.title("acc precip and MSLP \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
 
-def t2m_rh2m(gribfile):
-    #parameters
-    params = {'t2m':{'param':167 },
-              'rh2m':{'param':260242}
-              }
-    gp = list(params.keys())[0]
-    print(gp)
-    vars = read_vars(gribfile,params,step=0)
-    lons = vars[gp]['misc']['lons']
-    lats = vars[gp]['misc']['lats']
-    proj = vars[gp]['misc']['proj']
-    dt = vars[gp]['misc']['date']
-    fcstep = vars[gp]['misc']['fcstep']
+def t2m_rh2m(ds):
+    lons = ds['misc']['lons']
+    lats = ds['misc']['lats']
+    proj = ds['misc']['proj']
+    dt = ds['misc']['date']
+    fcstep = ds['misc']['fcstep']
 
     # Plotting parameters
     t_colors = ['#ffffff','#e6e6e6','#cccccc','#b3b3b3','#ae99ae','#7a667a','#330066','#590080','#8000ff',
@@ -161,8 +176,7 @@ def t2m_rh2m(gribfile):
                 4,8,12,16,20,24,28,32,36,40,44,48,52,56])
 
     # Fields to plot
-    t2m = vars['t2m']['field'] - 273.15
-    rh2m = vars['rh2m']['field']
+    t2m = ds['params']['t2m']['field'] - 273.15
 
     fig = plt.figure(figsize=[12,9])
     ax = plt.axes(projection=proj)
@@ -177,18 +191,55 @@ def t2m_rh2m(gribfile):
 
     plt.title("Analysed T2M \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
 
+def from_path():
+    params = {'msl':{'param':151},
+              'tp':{'param':228228}
+              }
+    if len(sys.argv) < 1:
+        print("please provide path to grib2 files")
+        exit()
+    path = sys.argv[1] + '/'
+    f1 = glob.glob(path+"fc.*.sfc.grib2")
+    for f in f1:
+        ds = read_vars(f,params,step=3)
+        mslp_precip(ds)
+        plt.show()
+        #plt.savefig('mslp_precipitation')
+    f2 = glob.glob(path+"an.*.sfc.grib2")
+    params = {'t2':{'param':167 }}
+    for f in f2:
+        ds = read_vars(f,params,step=3)
+        t2m_rh2m(ds)
+        plt.show()
+
+
+
+
+def from_mars(dt,origin):
+    params = {'msl':{'param':151},
+              'tp':{'param':228228}
+              }
+    ds = request_vars(params,dt,type='fc',origin=origin,step=3)
+    mslp_precip(ds)
+    plt.savefig('mslp_precip_%s_%s_%d.png' % (origin,dt.strftime("%Y%m%d%H"),3))
+    plt.close()
+
+    params = {'t2m':{'param':167 }} 
+    ds = request_vars(params,dt,type='an',origin=origin,step=0)
+    t2m_rh2m(ds)
+    plt.savefig('t2m_analysis_%s_%s.png' % (origin,dt.strftime("%Y%m%d%H")))
+    plt.close()
+
 
 if __name__=='__main__':
 
-  path = sys.argv[1]
+    parser = argparse.ArgumentParser(description='make wheather maps')
+    parser.add_argument('--dtg',type=str,help='yyyymmddhh')
+    parser.add_argument('--source',type=str,help='mars or path/to/grib2files/')
+    parser.add_argument('--origin',type=str,default='no-ar-ce',help="DOMAIN: no-ar-ce or no-ar-cw")
+    
+    args = parser.parse_args()
+    dt = datetime.datetime.strptime(args.dtg,"%Y%m%d%H")
 
-  f1 = glob.glob(path+"fc.*.sfc.grib2")
-  for f in f1:
-      mslp_precip(f)
-      plt.show()
-      #plt.savefig('mslp_precipitation')
-
-  f2 = glob.glob(path+"an.*.sfc.grib2")
-  for f in f2:
-      t2m_rh2m(f)
-      plt.show()
+    if args.source == 'mars':
+        from_mars(dt,args.origin)

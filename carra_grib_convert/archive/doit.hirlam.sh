@@ -30,6 +30,7 @@ hh=$(echo $dtg | cut -c9-10)
 # Convert precise fields for given $date, $type and $levtype and write them to $outdir
 convert=1
 archive=1
+database=marsscratch
 version=prod # MARS expver of PRECISE data for production
 levtypes="sfc pl ml hl soil"
 types="an fc"
