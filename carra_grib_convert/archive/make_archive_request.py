@@ -1,6 +1,7 @@
 import os
 import eccodes as ecc
-
+import argparse
+import sys
 
 class Request(object):
 
@@ -22,7 +23,6 @@ class Request(object):
         self.marsClass = Class
         self.stream = Stream
         self.expect = len(self.step)*len(self.param)*len(self.levelist)
-#        self.source = "%s.%s.%s.%s.grib2" % (self.type.lower(),self.date,self.hour+"00",self.levtype.lower())
 
     def write_request(self,f):
         separator = '/'
@@ -44,12 +44,11 @@ class Request(object):
 
 class RequestFromGrib(Request):
 
-    def __init__(self,gribfile,Action):
-        super().__init__()
+    def __init__(self,gribfile,Action,Database='marsscratch'):
+        super().__init__(Database=Database)
         self.source = gribfile
         self.action = Action
         self.parse_grib_file()
-#        self.expect = len(self.step)*len(self.param)*len(self.levelist)
 
     def parse_grib_file(self):
         gribfile = self.source
@@ -96,53 +95,18 @@ def _line(key,val,eol=','):
     return "    %s= %s%s\n" % (key.ljust(11),val,eol)
 
 
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
 
-    import sys
+    parser = argparse.ArgumentParser(description='dump mars request from input gribfile')
+    parser.add_argument('filename',type=str,help='grib file name')
+    parser.add_argument('--database',type=str,default='marsscratch',help='mars database')
 
-    gribfile = sys.argv[1]
+    args = parser.parse_args()
 
-#    gribfile = "an.20170109.0300.hl.grib2"
+    gribfile = args.filename
 
     with sys.stdout as rf:
-        req = RequestFromGrib(gribfile,"archive")
+        req = RequestFromGrib(gribfile,"archive",args.database)
         req.write_request(rf)
 
-"""
-    # Height Levels
-    levelist = [15,30,50,75,100,150,200,250,300,400,500]
-    param = [130,54,3031,10,157,246,247]
-    levtype = "hl"
-
-    print(len(levelist)*len(param))
-
-    # Pressure Levels
-    levelist = [10,20,30,50,70,100,150,200,250,300,400,500,600,700,750,800,825,850,875,900,925,950,1000]
-    param = [131,132,130,76,75,260028,129,3014,260238,60,157,260257,246,247]
-    levtype = "pl"
-
-    # Model Levels
-    levelist = [i+1 for i in range(65)]
-    param = [133,130,131,132,75,76,260028,260155,260257,246,247]
-    levtype = "ml"
-
-    # Surface Level
-    param = [235,167,165,166,151,260057,134,3020,260260,207,260107,260108,228002,173,172,228164,3075,3074,3073,260242,228141,260509,31,34,260430,174008]
-    levtype = "sfc"
-
-    # Soil Levels
-    param = [260199]
-    levelist = [1,2]
-    levtype = "sol"
-
-    #whith open("archive.batch",'w') as f:
-"""
 exit()
