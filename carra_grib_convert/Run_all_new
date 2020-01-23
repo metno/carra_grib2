@@ -29,6 +29,7 @@ else
     exit -1
 fi
 
+cd $WRK
 rm $WDIR
 
 trap - 0

@@ -1,0 +1,41 @@
+#!/bin/bash
+
+set -ax 
+
+. header.sh
+
+cd $WRK
+WDIR=`hostname`$$
+Workdir $WDIR
+trap "Trapbody $WDIR ; exit 1" 0
+
+dtg=$DTG
+
+module unload grib_api
+module unload metview
+module load python3
+module load eccodes/2.15.0
+module load metview/5.7.5
+
+if [[ "$DOMAIN" == "CARRA_NE" || "$DOMAIN" ]];then
+  origin='no-ar-ce'
+elif [[ "$DOMAIN" == "CARRA_SW" || "$DOMAIN" == "IGB" ]];then
+  origin='no-ar-cw'
+else
+  origin=""
+  echo "Unknown domain $DOMAIN"
+  exit 1
+fi
+
+python3 $HM_LIB/util/carra_grib2/tools/batch_plot_fields.py '--dtg' $DTG '--source' mars '--origin' $origin || exit 1
+
+
+[ -d $ARCHIVE_ROOT/gallery ] || $MKDIR $ARCHIVE_ROOT/gallery
+
+mv *.png $ARCHIVE_ROOT/gallery/ || exit 1
+
+cd $WRK
+rm -r $WDIR
+
+trap - 0
+exit

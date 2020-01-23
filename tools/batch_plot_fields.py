@@ -13,7 +13,7 @@ import datetime
 import copy
 import glob
 
-import eccodes as ecc
+#import eccodes as ecc
 import metview as mv
 
 def str2dict(string):
@@ -139,22 +139,31 @@ def mslp_precip(ds):
 
     fig = plt.figure(figsize=[12,9])
     ax = plt.axes(projection=proj)
+
+    land_50m = cfeature.NaturalEarthFeature('physical', 'land', '50m',
+                                            edgecolor='face',
+                                            facecolor=cfeature.COLORS['land'])
+    ax.add_feature(land_50m)
+
     CS = ax.contour(lons,lats,mslp,
                     transform=ccrs.PlateCarree(),
                     levels=pcontours,
                     colors='k',
+                    zorder=3,
                     linewidths=[2,1,1,1,1])
     ax.clabel(CS,inline=1,fmt='%d')
 
     CS2 = ax.contourf(lons,lats,precip,
                       transform=ccrs.PlateCarree(),
                       levels=precip_levels,
-                      colors=precip_colors)
+                      colors=precip_colors,
+                      zorder=2,
+                      alpha=0.9)
     plt.colorbar(CS2,shrink=0.5,orientation='vertical')
-    land_50m = cfeature.NaturalEarthFeature('physical', 'land', '50m',
-                                            edgecolor='face',
-                                            facecolor=cfeature.COLORS['land'])
-    ax.add_feature(land_50m)
+#    land_50m = cfeature.NaturalEarthFeature('physical', 'land', '50m',
+#                                            edgecolor='face',
+#                                            facecolor=cfeature.COLORS['land'])
+#    ax.add_feature(land_50m)
     ax.coastlines('50m')
     ax.gridlines()
 
