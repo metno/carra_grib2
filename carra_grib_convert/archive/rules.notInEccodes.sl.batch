@@ -21,7 +21,7 @@ transient sl1 = -999;
 
 transient levtype_str = "";
 
-transient debug = 1;
+transient debug = 0;
 
 switch (param) {
 

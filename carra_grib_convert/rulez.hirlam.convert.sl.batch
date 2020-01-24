@@ -1,4 +1,4 @@
-#######################################
+######################################
 # grib_api used must be >= 1.15.0!!
 #######################################
 
@@ -9,7 +9,7 @@ transient step = @step@ ;
 transient fstep = @fstep@ ;
 transient ltype = @ltype@ ;
 
-transient debug = 1;
+transient debug = 0;
 
 transient parType = "";
 transient param2 = -999;

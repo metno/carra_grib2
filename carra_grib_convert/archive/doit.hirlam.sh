@@ -29,8 +29,15 @@ hh=$(echo $dtg | cut -c9-10)
 
 # Convert precise fields for given $date, $type and $levtype and write them to $outdir
 convert=1
-archive=1
-database=marsscratch
+if [ "$CARRA_GRIB2_ARCHIVE" == "yes" ];then
+  archive=1
+  echo "WARNING! You are pushing to MARS $MARS_DATABASE"
+else
+  archive=0
+  echo "INFO! skip pushing to MARS"
+fi
+
+database=${MARS_DATABSE-marsscratch}
 version=prod # MARS expver of PRECISE data for production
 levtypes="sfc pl ml hl soil"
 types="an fc"
