@@ -53,7 +53,7 @@ types="an fc"
 ##        then when all is ok set version=prod also do not forget to 
 
 # directory set up
-bin=$HM_LIB/util/carra_grib_convert/archive # location of script and grib_filter rule files
+bin=$HM_LIB/util/carra_grib2/carra_grib_convert/archive # location of script and grib_filter rule files
 inpdir=$WRK/carra_grib1 # input hirlam grib1 dir
 outdir=$WRK/carra_grib2 # output grib2 dir
 
@@ -166,10 +166,14 @@ if [[ "$archive" == "1" ]] ; then
  
   # Verify that the expected number of fields ($archived_expected) were archived and the MARS field list 
   #   for actual day is the same as the reference one ($tree_ref)
-  
+
+  max_tries=3
+  k=0
+  while [ "$k" -lt "$max_tries" ];do
+    all_good=0
     rm -rf tree.out cost.out
   
-  mars -n -t << EOF
+    mars -n -t << EOF
 list,
       class      = RR,
       origin     = $origin,
@@ -191,15 +195,34 @@ list,
       output     = table
 EOF
 
-  archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
-  if [[ "$archived" != "$archived_expected" ]] ; then
-    exit 1
-    echo "$date: Different number of fields archived than expected: $archived ($archived_expected)!"
-  fi
+    archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
+    if [[ "$archived" != "$archived_expected" ]] ; then
+      echo "$date: Different number of fields archived than expected: $archived ($archived_expected)! try $k"
+    else
+      all_good=$((all_good + 1))
+    fi
+ 
+    
+    tree_ref=$bin/carra-${suiteName}-${fclen}.tree.reference.out
+    if [[ $(diff tree.out ${tree_ref}) ]] ; then
+      echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs! try $k"
+    else
+      all_good=$((all_good + 1))
+    fi
   
-  tree_ref=$bin/carra-${suiteName}-${fclen}.tree.reference.out
-  if [[ $(diff tree.out ${tree_ref}) ]] ; then
-    echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs!"
+    if [ "$all_good" -eq "2" ];then
+      break
+    else
+      echo "try #$k"
+      sleep 5
+    fi
+
+    k=$((k+1))
+
+  done
+  
+  if [ "$all_good" -ne "2" ]; then
+    echo "Archive check failed!"
     exit 1
   fi
 
