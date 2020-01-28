@@ -210,7 +210,7 @@ EOF
       all_good=$((all_good + 1))
     fi
   
-    if [ "$all_good" -eq "2" ];then
+    if [[ "$all_good" -eq "2" ]]; then
       break
     else
       echo "try #$k"
@@ -221,7 +221,9 @@ EOF
 
   done
   
-  if [ "$all_good" -ne "2" ]; then
+  if [[ "$all_good" -eq "2" ]]; then
+    echo "Archiving successful"
+  else
     echo "Archive check failed!"
     exit 1
   fi
