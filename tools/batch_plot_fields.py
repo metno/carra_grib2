@@ -14,6 +14,7 @@ import cartopy.feature as cfeature
 import datetime
 import copy
 import glob
+import pyproj
 
 #import eccodes as ecc
 import metview as mv
@@ -130,6 +131,8 @@ def mslp_precip(ds):
     dt = ds['misc']['date']
     fcstep = ds['misc']['fcstep']
 
+    PRJ = pyproj.Proj(proj.proj4_init)
+
     # Plotting parameters
     pcontours = np.arange(960,1060,2)
     precip_levels = [0.5,2,4,10,25,50,100,250]
@@ -139,14 +142,8 @@ def mslp_precip(ds):
     mslp = ds['params']['msl']['field']/100
     precip = ds['params']['tp']['field']
 
-    fig = plt.figure(figsize=[12,9])
+    fig = plt.figure(figsize=[12,9],edgecolor='k')
     ax = plt.axes(projection=proj)
-
-    land_50m = cfeature.NaturalEarthFeature('physical', 'land', '50m',
-                                            edgecolor='face',
-                                            facecolor=cfeature.COLORS['land'])
-    ax.add_feature(land_50m)
-
     CS = ax.contour(lons,lats,mslp,
                     transform=ccrs.PlateCarree(),
                     levels=pcontours,
@@ -162,13 +159,18 @@ def mslp_precip(ds):
                       zorder=2,
                       alpha=0.9)
     plt.colorbar(CS2,shrink=0.5,orientation='vertical')
-#    land_50m = cfeature.NaturalEarthFeature('physical', 'land', '50m',
-#                                            edgecolor='face',
-#                                            facecolor=cfeature.COLORS['land'])
-#    ax.add_feature(land_50m)
+    land_50m = cfeature.NaturalEarthFeature('physical', 'land', '50m',
+                                            edgecolor='face',
+                                            facecolor=cfeature.COLORS['land'])
+    ax.add_feature(land_50m)
     ax.coastlines('50m')
     ax.gridlines()
 
+    x0,y0 = PRJ(lons[0,0],lats[0,0])
+    x1,y1 = PRJ(lons[-1,-1],lats[-1,-1])
+    N = 10000
+    ax.set_xlim(x0-N,x1+N)
+    ax.set_ylim(y0-N,y1+N)
     plt.title("acc precip and MSLP \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
 
 def t2m_rh2m(ds):
@@ -202,15 +204,12 @@ def t2m_rh2m(ds):
 
     plt.title("Analysed T2M \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
 
-def from_path():
+def from_path(path):
     params = {'msl':{'param':151},
               'tp':{'param':228228}
               }
-    if len(sys.argv) < 1:
-        print("please provide path to grib2 files")
-        exit()
-    path = sys.argv[1] + '/'
-    f1 = glob.glob(path+"fc.*.sfc.grib2")
+    f1 = glob.glob(path+"/fc.*.sfc.grib2")
+    print(f1)
     for f in f1:
         ds = read_vars(f,params,step=3)
         mslp_precip(ds)
