@@ -16,4 +16,4 @@ export PATH=$PATH:$HM_LIB/scr/
 cd $WRK
 
 
-$HM_LIB/util/carra_grib2/carra_grib_convert/Run_all_new
+$HM_LIB/util/carra_grib2/carra_grib_convert/Carra_grib_convert
