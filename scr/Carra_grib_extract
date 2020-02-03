@@ -17,7 +17,7 @@ id=$(echo $dtg | cut -c7-8)
 ih=$(echo $dtg | cut -c9-10)
 
 inpdir=$ARCHIVE #/scratch/ms/no/fa0e/hm_home/june_output_stage/archive/2014/03/02/00/ # hirlam input files
-carrabin=$HM_LIB/util/carra_grib2/carra_grib_convert # where this script and rules' files for grib_filter are 
+carrabin=$HM_LIB/util/carra_grib2/extract # where this script and rules' files for grib_filter are 
 out1=$WDIR/carra_grib && mkdir -p $out1 # output dir for carra fields selected from hirlam input files
 out2=$WRK/carra_grib1 && mkdir -p $out2 # output dir for concatenated files
 out3=$WRK/carra_grib2 && mkdir -p $out3 #output dir for concatenated files

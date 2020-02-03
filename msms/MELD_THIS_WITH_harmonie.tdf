@@ -1,0 +1,710 @@
+! Harmonie (including EPS)
+! Indentation rules for this file:
+!  - preprocessing constructs (if,loop) follow their own indentation, with
+!    2 new spaces for each new nested level
+!  - definiton file constructs (suite,family,task,trigger,complete,edit,...)
+!    are indented 3 new spaces for each new "level"
+! Please respect this when updating the file, it makes reading it easier
+<PRE>
+
+suite $ENV{EXP}
+
+edit USER $ENV{USER}
+edit OWNER $ENV{USER}
+
+if ( $ENV{SCHEDULER} eq 'ECFLOW' )
+ edit ECF_INCLUDE $ENV{HM_LIB}/ecf
+ edit ECF_FILES   $ENV{HM_LIB}/ecf
+else
+ edit SMSINCLUDE $ENV{HM_LIB}/sms
+ edit SMSFILES   $ENV{HM_LIB}/sms
+endif
+
+edit SMSTRIES 1
+edit ECFTRIES 2
+edit EXP $ENV{EXP}
+edit ARGS ""		             # default arguments to a script
+edit ENVT ""		             # default environment to a script
+edit YMD $ENV{StartDate}             # use first date outside loops
+edit HH $ENV{StartHour}	             # use first hour outside loops
+edit Env_system $ENV{ENV_SYSTEM}     # default
+edit HM_REV $ENV{HM_REV}	     # effectively define HARMONIE version
+edit PP ""		             # for progress.log and progressPP.log
+edit ENSMBR -1                       # ensemble member, -1 for deterministic mode
+edit HM_WD $ENV{HM_WD}
+edit HM_DATA "$ENV{HM_DATA}"
+edit HM_LIB "$ENV{HM_LIB}"
+edit DTGBEG $ENV{DTGBEG}
+edit DTGEND $ENV{DTGEND}
+edit FORCE_BUILD ""
+edit LBCN 0
+edit StartDate $ENV{StartDate}
+edit StartHour $ENV{StartHour}
+
+if ( $ENV{SCHEDULER} eq 'ECFLOW' )
+ edit ECF_HOME $ENV{JOBOUTDIR}
+ edit ECF_KILL_CMD "echo not working"
+ edit ECF_OUT $ENV{JOBOUTDIR}
+ edit ECF_JOBOUT $ENV{JOBOUTDIR}%ECF_NAME%.%ECF_TRYNO%
+ edit ECF_JOB_CMD "perl -S %HM_LIB%/scr/Submit.pl -e %ENSMBR% -y %YMD% -h %HH% -d %HM_DATA% -o %ECF_JOBOUT% -s %ECF_NODE% -p %ECF_PORT% %ECF_JOB% >> %HM_DATA%/ECF.log 2>&1"
+ edit ECF_LOGHOST $ENV{ECF_LOGHOST}
+ edit ECF_LOGPORT $ENV{ECF_LOGPORT}
+else
+ include system.inc
+ edit SMSJOBOUT $ENV{JOBOUTDIR}%SMSNAME%.%SMSTRYNO%
+ edit SMSCMD "perl -S %HM_LIB%/scr/Submit.pl -e %ENSMBR% -y %YMD% -h %HH% -d %HM_DATA% -o %SMSJOBOUT% %SMSJOB% >> %HM_DATA%/mSMS.log 2>&1"
+endif
+
+   task InitRun
+
+   include build.inc 
+
+   family MakeCycleInput
+      repeat date YMD $ENV{StartDateMCI} $ENV{EndDate}
+      complete [ $ENV{COMPLETE_FAMILY} =~ /:MakeCycleInput:/ ]
+      trigger ( MakeCycleInput:YMD < ( Date:YMD + 4 ) and InitRun == complete)
+
+      family Hour
+         repeat enumerated HH &Env('HH_LIST','union')
+         trigger ( ../Build == complete )
+         complete ( ( ( ../MakeCycleInput:YMD <= $ENV{StartDateMCI} ) and \
+                                    ( Hour:HH <  $ENV{StartHourMCI} ) ) or \
+                    ( ( ../MakeCycleInput:YMD >= $ENV{EndDate}   ) and \
+                                    ( Hour:HH >  $ENV{EndHour}   ) ) )
+      family Cycle
+         family Prepare_cycle
+           task Prepare_cycle
+loop(EEE,$ENV{ENSMFIRST},$ENV{ENSMLAST})
+  if( $ENV{ENSMSELX} =~ /@EEE@\b/ and '@EEE@' ne '-1' )
+           family Mbr@EEE@
+              trigger ( Prepare_cycle == complete )
+              edit ENSMBR @EEE@
+              task Prepare_cycle
+           endfamily # Mbr@EEE@
+  endif
+endloop
+         endfamily # Prepare_cycle
+         family Climate
+            complete [ $ENV{CREATE_CLIMATE} eq 'no' ]
+            trigger ( Prepare_cycle == complete )
+loop(EEE,$ENV{ENSMFIRST},$ENV{ENSMLAST})
+  if( $ENV{ENSMSELX} =~ /@EEE@\b/ )
+    if( '@EEE@' ne '-1' )
+            family Mbr@EEE@
+    endif
+               edit ENSMBR @EEE@
+               family PGD
+                  complete [ &Env('SURFACE','@EEE@') ne 'surfex' ]
+                  task Prepare_pgd_lfi
+                  task Prepare_pgd_fa
+ifeq($ENV{ANAATMO},4DVAR)
+            task Prepare_pgd_lfi_Lowres
+            task Prepare_pgd_fa_Lowres
+endif
+               endfamily # PGD
+               task Climate
+                  trigger ( PGD == complete )
+               task ExtractBDclim
+                  complete [ $ENV{HOST_MODEL} eq 'hir' or $ENV{HOST_MODEL} eq 'ifs' or $ENV{COMPCENTRE} ne 'ECMWF' ]
+    if( &Env('ANAATMO','@EEE@') eq '4DVAR' )
+               task ClimateLowres
+               trigger ( PGD == complete )
+    endif
+    if( '@EEE@' ne '-1' )
+            endfamily
+    endif
+  endif
+endloop
+         endfamily # Climate
+
+         task Prefetch_boundaries
+            trigger ( Prepare_cycle == complete )
+            complete [ $ENV{COMPCENTRE} ne 'ECMWF' or $ENV{HOST_MODEL} =~ /^a/ or $ENV{HOST_MODEL} eq 'hir' ]
+
+         family Boundaries
+            trigger ( Climate == complete and \
+                      Prepare_cycle == complete and \
+                      Prefetch_boundaries == complete )
+loop(EEE,$ENV{ENSMFIRST},$ENV{ENSMLAST})
+  if( $ENV{ENSMSELX} =~ /@EEE@\b/ )
+    if( '@EEE@' ne '-1' )
+            family Mbr@EEE@
+    endif
+               edit ENSMBR @EEE@
+               task Boundary_strategy
+               family LBC0
+                 edit LBCN 0
+                 trigger ( Boundary_strategy == complete )
+                 include bdgen.inc
+               endfamily # LBC0
+ifeq($ENV{MULTITASK},yes)
+!! new super-task doing all boundaries (parallel job)
+	       task LBCn_all
+    if( $ENV{BDSTRATEGY} eq 'eps_ec' )
+                 trigger ( Boundary_strategy == complete and \
+                           LBC0/ExtractBD == complete )
+    else
+                 trigger ( Boundary_strategy == complete )
+    endif
+else
+               family LBCn
+      if( $ENV{BDSTRATEGY} eq 'eps_ec' )
+                 trigger ( Boundary_strategy == complete and \
+                           LBC0/ExtractBD == complete )
+      else
+                 trigger ( Boundary_strategy == complete )
+      endif
+                 repeat integer LBCN 0 $ENV{LLMAX} $ENV{BDSTEP}
+    loop(N,1,$ENV{NBDMAX},1)
+                 family LBC@N@
+                   include bdgen.inc
+                 endfamily # LBC@N@
+    endloop
+               endfamily # LBCn
+endif
+    if( &Env('SURFACE','@EEE@') eq 'surfex' )
+      if( $ENV{HOST_MODEL} eq 'aro' )
+               task Addsurf
+                 trigger ( LBC0/ExtractBD == complete )
+      endif
+    endif
+    if( '@EEE@' ne '-1' )
+            endfamily # Mbr@EEE@
+    endif
+  endif # ENSMSELX
+endloop # ENSMBR
+         endfamily # Boundaries
+
+         task Clean_prefetch
+            trigger ( Boundaries == complete )
+            complete [ $ENV{COMPCENTRE} ne 'ECMWF' ]
+
+         family Observations
+            trigger ( Climate == complete and \
+                      Prepare_cycle == complete )
+loop(EEE,$ENV{ENSMFIRST},$ENV{ENSMLAST})
+  if( $ENV{ENSMSELX} =~ /@EEE@\b/ )
+    if( '@EEE@' ne '-1' )
+         family Mbr@EEE@
+    endif
+            edit ENSMBR @EEE@
+if( ( &Env('ANAATMO','@EEE@') eq 'none' or &Env('ANAATMO','@EEE@') eq 'blending' ) and &Env('ANASURF','@EEE@') eq 'none' )
+            edit _mSMS_skip 1
+endif
+            task Oulan
+            task Fetch_rsbcorr_rra
+               complete [ ( $ENV{LRSBCORR_ERA5} eq 0 ) ]
+            task LocObs
+               trigger ( Oulan == complete )
+            task Bator 
+               trigger ( LocObs == complete )
+            task Prepradar
+               complete [ ( &Env('ANAATMO','@EEE@') ne '3DVAR' and &Env('ANAATMO','@EEE@') ne '4DVAR' ) or ( $ENV{RADAR_OBS} eq '0' ) ]
+if ( &Env('USE_MSG','@EEE@') eq 'yes' )
+            task GetCloudInfo
+endif
+    if( '@EEE@' ne '-1' )
+         endfamily # Mbr@EEE@
+    endif
+  endif # ENSMSELX
+endloop # ENSMBR
+         endfamily # Observations
+
+      endfamily # Cycle
+
+      task CollectLogs
+         trigger ( Cycle == aborted or Cycle == complete )
+         edit ENVT 'FROM=MakeCycleInput'
+
+      task LogProgress
+         edit PP MCI
+         trigger ( Cycle == complete and CollectLogs == complete )
+      endfamily # Hour
+
+   endfamily # MakeCycleInput
+
+   family Date	
+      repeat date YMD $ENV{StartDate} $ENV{EndDate}
+      complete [ $ENV{COMPLETE_FAMILY} =~ /:Date:/ ]
+      trigger ( Build == complete )
+
+loop(HH,0,21,3)
+      family Hour@HH@
+         complete ( ( ( ../Date:YMD <= $ENV{StartDate} ) and \
+                          ( @HH@ <  $ENV{StartHour} ) ) or \
+                    ( ( ../Date:YMD >= $ENV{EndDate}   ) and \
+                          ( @HH@ >  $ENV{EndHour}   ) ) )
+if( @HH@ > 0 )
+         trigger ( Hour@HH-1@/Cycle/Forecasting/Listen2Forecast/Listen:FCINT or \
+                   Hour@HH-1@ == complete )
+endif
+      edit HH @HH@
+      family Cycle
+loop(EEE,$ENV{ENSMFIRST},$ENV{ENSMLAST})
+  if( $ENV{ENSMSELX} =~ /@EEE@\b/ )
+    if( '@EEE@' ne '-1' )
+         edit _mSMS_maxfailed $ENV{ENSMFAIL}
+         family Mbr@EEE@
+            trigger ( ( ../../../MakeCycleInput == complete ) or \
+                    (  ../../../MakeCycleInput:YMD >  ../../../Date:YMD or \
+                     ( ../../../MakeCycleInput:YMD == ../../../Date:YMD and \
+                     ( ../../../MakeCycleInput/Hour:HH >  ../../Hour:HH or \
+                     ( ../../../MakeCycleInput/Hour:HH == ../../Hour:HH and \
+                       ../../../MakeCycleInput/Hour/Cycle/Observations/Mbr@EEE@ == complete and \
+                       ../../../MakeCycleInput/Hour/Cycle/Boundaries/Mbr@EEE@/LBC0 == complete )))))
+    else
+          trigger ( ( ../../MakeCycleInput == complete ) or \
+                  ( ../../MakeCycleInput:YMD >  ../../Date:YMD or \
+                  ( ../../MakeCycleInput:YMD == ../../Date:YMD and \
+                  ( ../../MakeCycleInput/Hour:HH >  @HH@ or \
+                  ( ../../MakeCycleInput/Hour:HH == @HH@ and \
+                    ../../MakeCycleInput/Hour/Cycle/Observations == complete and \
+                    ../../MakeCycleInput/Hour/Cycle/Boundaries/LBC0 == complete )))))
+    endif
+            edit ENSMBR @EEE@
+         family StartData
+            task FirstGuess
+    if( &Env('SURFACE','@EEE@') eq 'surfex' )
+            task Prep_ini_surfex
+	       trigger ( FirstGuess == complete )
+    endif
+         if ( ( &Env('PERTSURF','@EEE@')  eq 'ECMA' or &Env('PERTATMO','@EEE@') eq 'ECMAOFF' ) and ( &Env('ANAATMO','@EEE@') =~ /VAR/ or &Env('ANASURF','@EEE@')  ne 'none' ) )
+            task Pertobs_ecma
+               trigger ( FirstGuess == complete )
+         endif
+         endfamily
+
+         family Analysis
+            trigger ( StartData == complete )
+# This Addsurf should use surfex values instead of climate values!!!!
+            task Addsurf
+               complete [ ( $ENV{SURFACE} ne "surfex" and &Env('ANAATMO','@EEE@') ne 'blending' and &Env('ANAATMO','@EEE@') ne '4DVAR' ) or ( &Env('ANASURF','@EEE@') eq 'none' and &Env('ANAATMO','@EEE@') eq 'none' ) ]
+            family AnSFC
+               complete [ &Env('ANASURF_MODE','@EEE@') eq 'after' or  &Env('ANASURF','@EEE@') eq 'none' ]
+               trigger ( Addsurf == complete )
+               include AnSFC.inc
+            endfamily # AnSFC
+
+            family AnUA
+               complete [ &Env('ANAATMO','@EEE@') eq 'none' ]
+    if( &Env('ANAATMO','@EEE@') =~ /VAR/ )
+               trigger ( AnSFC == complete and Addsurf == complete )
+               task Fetch_assim_data
+    endif
+    if( &Env('ANAATMO','@EEE@') eq '3DVAR' )
+               task Screening
+                  trigger ( Fetch_assim_data == complete )
+               task Pertobs_ccma
+                  trigger ( Screening == complete )
+                  complete [ &Env('PERTATMO','@EEE@') ne 'CCMA' ]
+               task Minim
+                  trigger ( Screening == complete and \
+                            Pertobs_ccma == complete )
+               task Blend
+                  trigger ( Minim == complete )
+               if ( &Env('USE_MSG','@EEE@') eq 'yes' )
+                  task BlendCloudInfo
+                     trigger ( Blend == complete )
+               endif
+    elsif( &Env('ANAATMO','@EEE@') eq '4DVAR' )
+               task 4DVprolog
+               task 4DVprolog_surfex
+               task 4DVscreen
+                  trigger ( Fetch_assim_data == complete )
+      loop(N,1,$ENV{NOUTERLOOP})
+	       family 4DVloop@N@
+        if( @N@ == 1 )
+                  trigger ( 4DVscreen == complete and \
+                            4DVprolog == complete and \
+                            4DVprolog_surfex == complete )
+        else
+                  trigger ( 4DVloop@N-1@ == complete )
+        endif
+                  edit ARGS @N@
+                  
+                  task 4DVminim
+
+                  if ( $ENV{CH_RES_SPEC} eq 'yes' )
+                      task Blendhr
+                         trigger ( 4DVminim == complete )
+                      task 4DVtraj
+                         trigger ( Blendhr == complete )
+                  else      
+                   task fpl2h_fg
+                     trigger ( 4DVminim == complete )
+                   task fpl2h_an
+                     trigger ( 4DVminim == complete )
+                   task 4DVtraj
+                     trigger ( fpl2h_an == complete and fpl2h_fg == complete )
+                  endif
+               endfamily
+      endloop
+    elsif( &Env('ANAATMO','@EEE@') eq 'blending' )
+               task Blend_surf
+      if ( &Env('ANASURF','@EEE@') ne 'none' )
+                  trigger ( ../AnSFC == complete and  ../Addsurf == complete )
+      endif
+               task Blend
+                 trigger ( Blend_surf == complete ) 
+    endif
+            endfamily # AnUA
+    if( $ENV{ANASURF_MODE} eq "after" or $ENV{ANASURF_MODE} eq "both" )
+            family AnSFC2
+               complete [ &Env('ANASURF','@EEE@') eq 'none' ]
+               trigger ( AnUA == complete )
+               include AnSFC.inc
+            endfamily # AnSFC2
+    endif
+         endfamily # Analysis
+
+    if ( '@EEE@' ne '-1' )
+         family Perturbations
+      if ( $ENV{ENSINIPERT} eq 'randb' )
+        if ( &Env('ENSCTL','@EEE@') == '@EEE@' )
+            task ListenMbr
+               trigger ( ../Analysis == complete )
+            task RunBgpert
+               trigger ( ListenMbr == complete )
+            task BlendBgpert
+               trigger ( RunBgpert == complete )
+        else
+            trigger ( ../Mbr&Env('ENSCTL','@EEE@')/Perturbations == complete )
+            task RunBgpert
+               complete [ &Env('ENSCTL','@EEE@') ne '@EEE@' ]
+            task BlendBgpert
+               complete [ &Env('ENSCTL','@EEE@') ne '@EEE@' ]
+        endif
+      else
+            trigger ( Analysis == complete ) 
+            task PertAna
+        if ( $ENV{ENSINIPERT} eq 'bnd' )
+               complete [ &Env('ENSCTL','@EEE@') eq '@EEE@' and &Env('SLAFLAG','@EEE@') == 0 ]
+           if ( &Env('ENSCTL','@EEE@') ne '@EEE@' )
+               trigger ( ../../Mbr&Env('ENSCTL','@EEE@')/Analysis == complete )
+           endif
+        else
+               complete 1
+        endif
+        if ( &Env('PERTSURF','@EEE@') eq 'model' )
+            task PertSFC
+	       complete [ &Env('ENSCTL','@EEE@') eq '@EEE@' ]
+        endif
+      endif
+         endfamily # Perturbations
+    endif
+
+         family Forecasting
+    if ( '@EEE@' ne '-1' )
+               trigger ( StartData == complete and Analysis == complete and Perturbations == complete and \
+                ( ../Mbr&Env('ENSCTL','@EEE@')/Perturbations == complete ) and \
+                       ( ( ../../../../MakeCycleInput == complete ) or \
+                         ( ../../../../MakeCycleInput:YMD >  ../../../../Date:YMD or \
+                         ( ../../../../MakeCycleInput:YMD == ../../../../Date:YMD and \
+                         ( ../../../../MakeCycleInput/Hour:HH >  ../../../Hour:HH or \
+                           ../../../../MakeCycleInput/Hour:HH == ../../../Hour:HH and \
+                           ../../../../MakeCycleInput/Hour/Cycle/Boundaries == complete )))))
+    else
+               trigger ( StartData == complete and Analysis == complete and \
+                       ( ( ../../../MakeCycleInput == complete ) or \
+                         ( ../../../MakeCycleInput:YMD >  ../../../Date:YMD or \
+                         ( ../../../MakeCycleInput:YMD == ../../../Date:YMD and \
+                         ( ../../../MakeCycleInput/Hour:HH >  @HH@ or \
+                           ../../../MakeCycleInput/Hour:HH == @HH@ and \
+                           ../../../MakeCycleInput/Hour/Cycle/Boundaries == complete )))))
+    endif
+            task Dfi
+               complete [ &Env('DFI','@EEE@') eq 'none' ]
+            task Forecast
+               trigger ( Dfi == complete )
+            family Listen2Forecast
+               trigger ( ( Forecast == active ) || ( Forecast == complete ) || ( Forecast == aborted ) )
+!! this family should not respect SMSTASKMAX, thus:
+               edit _mSMS_nowait 1
+!! may need EnsListener
+               task Listen
+                  meter progress -1 $ENV{LLMAX_TS} $ENV{LLMAX_TS}
+                  event FCINT
+
+    if($ENV{POSTP} eq 'offline' or $ENV{POSTP} eq 'both' )
+               task Listen4Postpp
+    endif
+    if( ($ENV{CONVERTFA} eq 'yes' and $ENV{ARCHIVE_FORMAT} =~ /GRIB/ ) or ( $ENV{IO_SERVER} eq 'yes' ) )
+ifeq($ENV{MULTITASK},yes)
+!! one listener does all, number of nodes set in Env_submit
+               task Listen2file
+                  edit SMSTRIES 2
+else
+      loop(N,1,$ENV{MAKEGRIB_LISTENERS})
+               family Process@N@
+	          edit ARGS @N@ $ENV{MAKEGRIB_LISTENERS}
+               task Listen2file
+                     edit SMSTRIES 2
+      if($ENV{POSTP} eq 'offline' or $ENV{POSTP} eq 'both' )
+               task Listen4Makegrib_fp
+      endif
+               endfamily
+      endloop
+endif
+    endif
+            endfamily #Listen2Forecast
+         endfamily # Forecasting
+    if( '@EEE@' ne '-1' )
+         endfamily # Mbr@EEE@
+    endif
+  endif # ENSMSELX
+endloop # ENSMBR
+      endfamily # Cycle 
+
+      task CollectLogs
+         trigger ( Cycle == aborted or Cycle == complete )
+if( $ENV{ENSMFAIL} > 0 )
+         edit ENVT 'FROM=Date noABTonABT=1'
+else
+         edit ENVT FROM=Date/Hour@HH@
+endif
+
+      task LogProgress
+if( @HH@ == 0 )
+         trigger ( Cycle == complete and CollectLogs == complete )
+else
+         trigger ( Cycle == complete and CollectLogs == complete and \
+	           ../Hour@HH-1@/LogProgress == complete )
+endif
+      endfamily # Hour@HH@
+endloop
+   endfamily # Date
+
+   family Postprocessing
+      complete [ $ENV{COMPLETE_FAMILY} =~ /:Postprocessing:/ ]
+      trigger ( Build == complete )
+      repeat date YMD $ENV{StartDatePP} $ENV{EndDate}
+
+loop(HH,0,21,3)
+      family Hour@HH@
+         complete ( ( ( ../Postprocessing:YMD <= $ENV{StartDatePP} ) and \
+                                    ( @HH@    <  $ENV{StartHourPP} ) ) or \
+                    ( ( ../Postprocessing:YMD >= $ENV{EndDate}     ) and \
+                                    ( @HH@    >  $ENV{EndHour}     ) ) )
+      edit HH @HH@
+      family Cycle
+loop(EEE,$ENV{ENSMFIRST},$ENV{ENSMLAST})
+  if( $ENV{ENSMSELX} =~ /@EEE@\b/ )
+    if ( '@EEE@' eq '-1' )
+         trigger  ( ../../Date:YMD >  ../../Postprocessing:YMD  or \
+                  ( ../../Date:YMD == ../../Postprocessing:YMD and \
+                  ( ../../Date/Hour@HH@ == complete )))
+    else
+         edit _mSMS_maxfailed $ENV{ENSMFAIL}
+         family Mbr@EEE@
+            trigger  ( ../../../Date == complete or \
+                     ( ../../../Date:YMD >  ../../../Postprocessing:YMD or \
+                     ( ../../../Date:YMD == ../../../Postprocessing:YMD and \
+                     ( ../../../Date/Hour:HH >  ../../Hour:HH or \
+                     ( ../../../Date/Hour:HH == ../../Hour:HH and \
+                       ../../../Date/Hour/Cycle/Mbr@EEE@ == complete )))))
+    endif
+            edit ENSMBR @EEE@
+
+         family PostAnalysis
+            task Archive_odb
+if ( $ENV{MAKEODB2} eq 'yes' )
+           family MakeODB2
+              if (( $ENV{SYNOP_OBS} == 1 || $ENV{BUOY_OBS} == 1 ) and ( &Env('ANASURF','@EEE@') ne "none" ))
+                 task makeodb2_conv_sfc
+                     edit ARGS sfc ECMA conv
+              endif
+              if ( &Env('ANAATMO','@EEE@') =~ /[34]DVAR/ ) 
+                include makeodb2.inc
+              endif
+           endfamily MakeODB2
+endif
+    if($ENV{CONVERTFA} eq 'yes' and $ENV{ARCHIVE_FORMAT} =~ /GRIB/ )
+             task Makegrib_an
+    endif
+         endfamily # PostAnalysis
+
+            family Obsmonitor
+               complete [ $ENV{OBSMONITOR} eq "no" ]
+      if ( ( $ENV{OBSMONITOR} =~ /obstat/ ) and \
+           ((( $ENV{SYNOP_OBS} == 1 || $ENV{BUOY_OBS} == 1 ) and ( &Env('ANASURF','@EEE@') ne "none" )) or  \
+           ( &Env('ANAATMO','@EEE@') =~ /[34]DVAR/ )) )
+               family obsmon_statistics
+ifeq($ENV{MULTITASK_OBSMON},yes)
+                   edit ODB_TYPE ECMA
+        if (( $ENV{SYNOP_OBS} == 1 || $ENV{BUOY_OBS} == 1 ) and ( &Env('ANASURF','@EEE@') ne "none" ))
+                   task obsmon_stat_sfc
+                     edit ODB_TYPE ECMA
+                     edit ARGS sfc
+        endif
+     
+        if ( &Env('ANAATMO','@EEE@') =~ /[34]DVAR/ )
+                   task obsmon_stat_ecma
+                     edit ODB_TYPE ECMA
+        endif
+        if ( &Env('ANAATMO','@EEE@') =~ /[34]DVAR/ )
+                    task obsmon_stat_ccma
+                      edit ODB_TYPE CCMA
+        endif
+else
+                 family ECMA
+                   edit ODB_TYPE ECMA
+        if (( $ENV{SYNOP_OBS} == 1 || $ENV{BUOY_OBS} == 1 ) and ( &Env('ANASURF','@EEE@') ne "none" ))
+                   task obsmon_stat_synop_sfc
+                     edit ODB_TYPE ECMA
+                     edit ARGS sfc
+                     
+        endif
+     
+        if ( &Env('ANAATMO','@EEE@') =~ /[34]DVAR/ )
+                   edit ODB_TYPE ECMA
+                   include obsmon.inc
+        endif
+                 endfamily ECMA
+        if ( &Env('ANAATMO','@EEE@') =~ /[34]DVAR/ )
+                 family CCMA
+                   edit ODB_TYPE CCMA
+                   include obsmon.inc
+                 endfamily CCMA
+        endif
+endif
+               endfamily obsmon_statistics
+               task obsmon_link_stat
+                 trigger ( obsmon_statistics == complete )
+        if( $ENV{HOST1} )
+               task obsmon_sync_stat
+                 trigger ( obsmon_link_stat == complete )
+                 edit SMSTRIES 2
+        endif
+    endif
+    if ( ( $ENV{OBSMONITOR} =~ /obtime/ ) or ( $ENV{OBSMONITOR} =~ /plotlog/ ) ) 
+               family obsmon_plot
+     if ( $ENV{OBSMONITOR} =~ /obtime/ )
+                  task obs_usage_timeseries
+     endif
+     if ( $ENV{OBSMONITOR} =~ /plotlog/ )
+               task Plotlog
+     endif
+               endfamily obsmon_plot
+    endif
+            endfamily Obsmonitor
+            family Carra_grib_convert
+               complete [ $ENV{CARRA_GRIB2_CONVERT} ne 'yes' ]
+               task Carra_grib_extract
+                   trigger ( ../PostAnalysis == complete )
+               task Carra_grib_archive
+                   trigger ( Carra_grib_extract == complete )
+               task Carra_grib_save4later
+                   trigger ( Carra_grib_extract == complete )
+               task Carra_grib_gallery
+                   trigger (Carra_grib_archive == complete )
+            endfamily Carra_grib_convert
+            family Extract4ver
+               task FetchOBS
+                  complete [ $ENV{OBSEXTR} eq 'none' or ( ( &Env('ENSCTL','@EEE@') ne '@EEE@' ) and ( '@EEE@' ne '-1' )) ]
+ifeq($ENV{MULTITASK},yes)
+               task Fldextr_all
+                  complete [ $ENV{FLDEXTR} eq 'no' ]
+else
+               family Fldextr_all
+    loop(N,1,$ENV{FLDEXTR_TASKS})
+                  family worker@N@
+                     task Fldextr
+                        edit ME @N@
+                  endfamily
+    endloop
+               endfamily # Fldextr_all
+endif
+           task Tar_vfld
+                  complete [ $ENV{FLDEXTR} eq 'no' ]
+          trigger ( Fldextr_all == complete )
+               task Verify_harmonie
+                  complete [ $ENV{VERIFY} eq 'no' ]
+                  trigger ( FetchOBS == complete and Tar_vfld == complete )
+            endfamily # Extract4ver
+
+            family Fldver_family
+               complete [ $ENV{FLDVER} eq 'no' ]
+               task Fldver
+               task AccuFldver
+                  trigger ( Fldver == complete )
+            endfamily # Fldver_family
+            task Archive_host1
+               trigger (    Extract4ver == complete and \
+                          Fldver_family == complete and \
+                           PostAnalysis == complete and \
+                             Obsmonitor == complete and \
+                      Carra_grib_convert/Carra_grib_save4later == complete )
+               complete [ $ENV{COMPCENTRE} ne 'ECMWF' or $ENV{ARCHIVE_ECMWF} eq 'no' ]
+               edit SMSTRIES 2
+            family Field_monitor
+               trigger ( Archive_host1 == complete )
+               complete [ $ENV{FIELDMONITOR} eq 'no' ]
+               task Field_monitor
+            endfamily # Field_monitor
+            task Pertdia
+               complete [ &Env('ENSCTL','@EEE@') eq '@EEE@' or  '@EEE@' eq '-1' ]
+    if( '@EEE@' ne '-1' )
+         endfamily # Mbr@EEE@
+    endif
+  endif # ENSMSELX
+endloop # ENSMBR
+      endfamily # Cycle
+
+if( $ENV{FESTAT} eq 'yes' )
+      task Femars
+         trigger ( Cycle == complete ) 
+      task Festat
+         trigger ( Femars == complete )
+endif
+
+      family Disk_cleaning
+if( $ENV{FESTAT} eq 'yes' )
+         trigger ( Cycle == complete and \
+                   Festat == complete )
+else
+         trigger ( Cycle == complete )
+endif
+         task SaniDisk
+if( $ENV{HOST1} )
+         task SaniDisk_host1
+endif
+      endfamily # Disk_cleaning
+      task Archive_ecgate
+         trigger ( Disk_cleaning == complete )
+         complete [ $ENV{COMPCENTRE} ne 'ECMWF' or $ENV{ARCHIVE_ECMWF} eq 'no' ]
+         edit SMSTRIES 2
+
+      task CollectLogs
+         trigger ( ( Cycle == complete and Disk_cleaning == complete and \
+                     Archive_ecgate == complete ) or \
+                   ( Cycle == aborted or Disk_cleaning == aborted or Archive_ecgate == aborted ) )
+if( $ENV{ENSMFAIL} > 0 )
+         edit ENVT 'FROM=Postprocessing noABTonABT=1' 
+else
+         edit ENVT FROM=Postprocessing/Hour@HH@
+endif
+
+      task LogProgress
+         edit PP PP
+if( @HH@ == 0 )
+         trigger ( Cycle == complete and Disk_cleaning == complete and \
+                   Archive_ecgate == complete and CollectLogs == complete )
+else
+         trigger ( Cycle == complete and Disk_cleaning == complete and \
+                   Archive_ecgate == complete and CollectLogs == complete and \
+                   ../Hour@HH-1@/LogProgress == complete )
+endif
+
+      endfamily # Hour@HH@
+endloop
+
+   endfamily # Postprocessing
+
+   task Wrapup
+      trigger ( MakeCycleInput == complete and \
+                          Date == complete and \
+                Postprocessing == complete )
+
+endsuite
+
+</PRE>

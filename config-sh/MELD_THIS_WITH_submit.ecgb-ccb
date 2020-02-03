@@ -1,0 +1,500 @@
+# -*- cperl -*-
+sub get_job {
+
+@tmp = split('/',shift) or die "No argument given to get_job \n" ;
+$job = pop @tmp ;
+
+# Define submission type and command for ecgb and ccb
+
+# ecgb SLURM
+$submit_type_ecgb ='#SBATCH ' ;
+
+# ccb PBS
+$submit_type ='#PBS ' ;
+
+#
+# Define the default background job with keywords
+# Background jobs will run on ecgate
+#
+
+%backg_ecgate_job= (
+'ZEMPTY'     => '',
+'SMSHOST'    => $ENV{HOST0},
+'SUBMIT'     => "$jobfile-q > $jobout 2>&1 &",
+'KILL'       => 'KillPid $$',
+'HOST'       => '0',
+'CLIENT'     => 'msms_client',
+) ;
+
+#
+# Define the default background jobs on ccb
+#
+
+ $jobout_host1 = $jobout ;
+ $jobout_host1 =~ s/hpc\///;
+
+ $backg_host = $ENV{HOST1} ;
+
+#
+# Define the default serial ccb batch job with keywords
+#
+
+#Xiaohua Yang, Oct 12 2019, use for the time being c3srra account
+#'ACCOUNT'          => $submit_type.'-l EC_billing_account=c3srra',
+
+%serial_ccb_job = (
+'HOST'             => '1',
+'SMSHOST'          => $ENV{HOST1},
+'NAME'      	   => $submit_type.'-N '.substr($job,0,15),
+'CLASS'            => $submit_type.'-q ns',
+'TOTAL_TASKS'      => $submit_type.'-l EC_total_tasks=1',
+'RESOURCES'        => $submit_type.'-l EC_memory_per_task=2000MB',
+'ACCOUNT'          => $submit_type.'-l EC_billing_account=c3srra',
+'TASK_PER_NODE'    => $submit_type.'-l EC_tasks_per_node=1',
+'THREADS_PER_TASK' => $submit_type.'-l EC_threads_per_task=1',
+'NOTIFICATION'     => $submit_type.'-m n',
+'ENV'              => $submit_type.'-v OMP_NUM_THREADS=1',
+'OUTPUT'           => $submit_type."-o ${jobout_host1}",
+'ERROR'            => $submit_type.'-j oe',
+'SUBMIT'           => "$RSH $ENV{HOST1} 'qsub -' < $jobfile-q",
+'KILL'             => "$RSH $ENV{HOST1} qdel \$PBS_JOBID",
+'CLIENT'           => "$HM_LIB1/msms/msms_client",
+'VIEW'             => "$RSH $ENV{HOST1} tail -n +1 -f /nfs/moms/\$HOST/var/spool/PBS/spool/\${PBS_JOBID}.OU 2>&1 |",
+'ZNPROC'           => 'export NPROC=1' ,
+'ZNPROCX'          => 'export NPROCX=1' ,
+'ZNPROCY'          => 'export NPROCY=1' ,
+'ZMPPEXEC'         => 'export MPPEXEC="mpiexec -n 1"' ,
+'ZMPPEXEC_CONV'    => 'export MPPEXEC_CONV="mpiexec -n 1"' ,
+'ZMPPGL'           => 'export MPPGL="mpiexec -n 1"' ,
+'ZHUGEPAGES'       => 'export LOADHUGEPAGES="no"' ,
+'ZZEMPTY'           => ''
+);
+if ( $ENV{SCHEDULER} eq 'ECFLOW' ) {
+  delete $serial_ccb_job{'VIEW'};
+  $jobout_running = $jobout_host1.'.running';
+  $serial_ccb_job{'ZVIEW'} = 'ln -sf /nfs/moms/$HOST/var/spool/PBS/spool/$PBS_JOBID.OU '.$jobout_running;
+  $serial_ccb_job{'TRAILER'} = "[ -L $jobout_running ] && rm -f $jobout_running"; #should be in trap handler
+}
+
+#
+# Create a aprun driven serial list
+#
+
+%serial_ccb_aprun_job = %serial_ccb_job ;
+
+#
+# Define the default serial batch job for ecgate
+#
+
+#
+#'ACCOUNT'       => $submit_type.'-l EC_billing_account=c3srra',
+#
+%serial_ecgate_job = (
+'SUBMIT'        => "sbatch $jobfile-q",
+'KILL'          => "scancel \$SLURM_JOB_ID",
+'CLIENT'        => 'msms_client',
+'HOST'          => '0',
+'OUTPUT'        => $submit_type_ecgb.' --output='.$jobout,
+'ERROR'         => $submit_type_ecgb.' --qos=express --error='.$jobout,
+'NAME'          => $submit_type_ecgb.' --job-name='.$job,
+'ZNPROC'        => 'export NPROC=1' ,
+'ACCOUNT'       => $submit_type.'-l EC_billing_account=c3srra',
+'ZNPROCX'       => 'export NPROCX=1' ,
+'ZNPROCY'       => 'export NPROCY=1' ,
+'ZMPPEXEC '     => 'export MPPEXEC=""' ,
+'ZMPPGL'        => 'export MPPGL=""' ,
+'SMSHOST'       => $ENV{HOST0},
+'ZEMPTY'        => ''
+);
+
+#
+# Define the default parallell batch job with keywords
+# Parallell jobs will run on ccb
+#
+
+# Number of processors, OpenMP threads and pools
+if ( $job eq 'Forecast' or $job eq 'Dfi' ) {
+ $nprocx=18;
+ $nprocy=32;
+} else {
+ $nprocx=1;
+ $nprocy=72;
+}
+
+if ( $ENV{IO_SERVER} eq "yes" ){
+  $nproc_io=2;
+}else{
+  $nproc_io=0;
+}
+$nproc = $nprocx * $nprocy ;
+$nproc_fc = $nproc + $nproc_io;
+$ompthr_fc = 1 ;
+$taskspn = 36 / $ompthr_fc;
+
+# Forecast and less memory consuming tasks
+$nodes_low = int(($nproc_fc-1) / $taskspn ) + 1 ;
+$tasks_low = $taskspn;
+$memory_low = int(128000/$tasks_low)-50 ;
+
+# Assimilation and more memory consuming tasks
+$nodes_high = int(($nproc-1) / 36) + 1 ;
+$tasks_high = int( $nproc / $nodes_high ) ;
+$nproc_high =  $nodes_high * $tasks_high ;
+$memory_high = int(128000/$tasks_high)-50 ;
+$npools= $nproc_high ;
+
+# Canari pools, could be different
+$npools_canari= 4;
+
+# OpenMP thread settings
+$ompthr_oim = 6;    # OI_main/SODA
+$ompthr_gl  = 2;     # gl_grib_api
+$ompthr_pis = 18;    # Prep_ini_surfex
+
+#4DVAR low resolution jobs
+$nprocx4 = $nprocx ;
+$nprocy4 = $nprocy / 2 ;
+$nproc4  = $nprocx4 * $nprocy4 ;
+
+$nodes_high4 = int(($nproc4-1) / 24) + 1 ;
+$tasks_high4 = int( $nproc4 / $nodes_high4 ) ;
+$nproc4 = $nodes_high4 * $tasks_high4 ;
+$memory_high4 = int(128000/$tasks_high4)-50 ;
+
+# Copy the serial ccb job
+%par_job = %serial_ccb_job ;
+
+$par_job{'HOST'}          = 1 ;
+$par_job{'CLASS'}         = $submit_type.'-q np' ;
+$par_job{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node='.$taskspn ;
+$par_job{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task='.$memory_low.'MB' ;
+$par_job{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks='.$nproc;
+$par_job{'THREADS_PER_TASK'} = $submit_type.'-l EC_threads_per_task=1' ;
+$par_job{'ZNPROC'}        = 'export NPROC='.$nproc;
+$par_job{'ZNPROCX'}       = 'export NPROCX='.$nprocx;
+$par_job{'ZNPROCY'}       = 'export NPROCY='.$nprocy;
+$par_job{'ZNPOOLS'}       = 'export NPOOLS='.$npools;
+$par_job{'ZMPPEXEC'}      = 'export MPPEXEC="aprun -n '.$nproc.'"' ;
+$par_job{'ZZOMP'}         = 'export OMP_NUM_THREADS=1' ;
+$par_job{'ZMPPGL'}        = 'export MPPGL="aprun -q -n 1"' ;
+$par_job{'ZMPPEXEC_CONV'} = 'export MPPGL="aprun -q -n 1"' ;
+$par_job{'ZHUGEPAGES'}    = 'export LOADHUGEPAGES="yes"' ;
+#
+# Build list of jobs 
+#
+# The default list should contain the word 'default'
+# Jobs deviating from default has to be defined as well
+#
+# Jobs on ecgate should be put in the batch list unless they
+# really need to be run in the background
+#
+
+# Batch jobs on ecgate
+@serial_ecgate_list= ('mSMS',
+                'Make_gl_simple',
+                'Make_gl_grib_api_simple',
+                'Make_monitor_no_obsmon',
+                'Archive_log','Archive_ecgate',
+                'CollectLogs','Finalize_test_case',
+                'obs_usage_timeseries','sabimon',
+                'Verify_harmonie','Field_monitor',
+                'Plotlog','plotstat','Follow_exp','Carra_grib_gallery');
+
+# Background jobs on ecgate
+@backg_ecgate_list  = ('InitRun','LogProgress','Create_exp',
+                       'Wrapup','SaniDisk','obsmon_sync_stat');
+
+# Serial batch jobs on ccb
+@serial_ccb_list = ('default','Soda_oi_main','Testbed_comp','Makeup_configure',
+                    'Boundary_strategy','Prepare_cycle','FirstGuess');
+
+@serial_ccb_aprun_list = ('Listen','Listen4Makegrib',
+                          'odb2ascii','Addsurf','gl_bd',
+                          'Prep_ini_surfex','4DVprolog_surfex',
+                          'Climate','ClimateLowres',
+                          'Fldextr','Interpol_ec_sst','Blend',
+                          'Prepare_pgd_fa','Prepare_pgd_lfi',
+                          'Prepare_pgd_fa_Lowres','Prepare_pgd_lfi_Lowres',
+                          'FetchOBS','Interpol_modis_alb',
+                          'Interpol_ec_sst','Blend',
+                          'Makegrib_an',
+                          'PertAna',
+                          'Pertobs_ecma','Pertobs_ccma',
+                          'EKF_SURFEX_ref','EKF_SURFEX_perturbed',
+                          'Build_rootpack','Femars',
+                          'Blend_surf','BlendBgpert','ListenMbr',
+                          'Oulan','Bator','AccuFldver',
+                          'Harm2musc','Forecast_musc') ;
+
+# Parallel batch jobs on ccb
+@par_list = ('Dfi','Forecast','Listen4Postpp','e927_bd',
+             'Makeup',
+             'Screening','Minim','Canari','Festat','RunBgpert',
+	         '4DVprolog','4DVtraj','4DVminim','4DVscreen',
+             'obsmon_stat_ecma', 'obsmon_stat_ccma',
+             'obsmon_stat_sfc','obsmon_stat_synop_sfc','obsmon_stat_synop', 
+             'obsmon_stat_aircraft', 'obsmon_stat_temp', 'obsmon_stat_pilot',
+             'obsmon_stat_amv','obsmon_stat_msu',
+             'obsmon_stat_amsua','obsmon_stat_amsub', 'obsmon_stat_atms',
+             'obsmon_stat_iasi','obsmon_stat_paob', 'obsmon_stat_scatt',
+             'obsmon_stat_radar','obsmon_stat_limb',
+             'fph2l','fpl2h_fg','fpl2h_an');
+
+
+# Define and fill the job list.
+%job_list    = () ;
+&build_list(('backg_ecgate','serial_ecgate',
+             'serial_ccb',
+             'serial_ccb_aprun','par',)) ;
+
+#
+# Make task specific changes
+#
+# mini-SMS itself
+$job_list{'mSMS'}{'QUEUE'} = $submit_type_ecgb.' --qos=minisms';
+$job_list{'mSMS'}{'NAME'}  = $submit_type_ecgb.' --job-name='.$ENV{EXP};
+$job_list{'mSMS'}{'ENV'}   = $submit_type_ecgb.' --export=NONE';
+$job_list{'mSMS'}{'WDIR'}  = $submit_type_ecgb.' --workdir='.$ENV{HM_DATA};
+$job_list{'mSMS'}{'ZEMPTY'}= 'cd '.$ENV{HM_DATA};
+
+# Screening/Minim/4D-Var
+for $task ('Minim','Screening','4DVtraj','4DVscreen'){
+ $job_list{$task}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node='.$tasks_high ;
+ $job_list{$task}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks='.$nproc_high ;
+ $job_list{$task}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task='.$memory_high.'MB' ;
+ $job_list{$task}{'ZMPPEXEC'}      = 'export MPPEXEC="aprun -n '.$nproc_high.'"' ;
+ $job_list{$task}{'ZNPROCX'}       = 'export NPROCX=1' ;
+ $job_list{$task}{'ZNPROCY'}       = 'export NPROCY='.$nproc_high ;
+ $job_list{$task}{'ZNPROC'}        = 'export NPROC='.$nproc_high ;
+}
+
+$job_list{'RunBgpert'}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node='.$tasks_high ;
+$job_list{'RunBgpert'}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks='.$nproc_high ;
+$job_list{'RunBgpert'}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task='.$memory_high.'MB' ;
+$job_list{'RunBgpert'}{'ZNPROCX'}       = 'export NPROCX=1';
+$job_list{'RunBgpert'}{'ZNPROCY'}       = 'export NPROCY='.$nproc_high ;
+$job_list{'RunBgpert'}{'ZNPROC'}        = 'export NPROC='.$nproc_high ;
+$job_list{'RunBgpert'}{'ZMPPEXEC'}      = 'export MPPEXEC="aprun -n '.$nproc_high.'"' ;
+$job_list{'RunBgpert'}{'ZMTM'}          = 'export MPI_TYPE_MAX=250000' ;
+$job_list{'RunBgpert'}{'ZZOMP'}         = 'export OMP_NUM_THREADS=1' ;
+$job_list{'RunBgpert'}{'ZENSSIZE'}      = 'export ENSSIZE='.$ENV{ENSSIZE} ;
+
+$job_list{'4DVminim'}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node='.$tasks_high4 ;
+$job_list{'4DVminim'}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks='.$nproc4 ;
+$job_list{'4DVminim'}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task='.$memory_high4.'MB' ;
+$job_list{'4DVminim'}{'ZNPROCX'}       = 'export NPROCX=1' ;
+$job_list{'4DVminim'}{'ZNPROCY'}       = 'export NPROCY='.$nproc4 ;
+$job_list{'4DVminim'}{'ZNPROC'}        = 'export NPROC='.$nproc4 ;
+$job_list{'4DVminim'}{'ZMPPEXEC'}      = 'export MPPEXEC="aprun -n '.$nproc4.'"' ;
+$job_list{'4DVminim'}{'ZMTM'}          = 'export MPI_TYPE_MAX=250000' ;
+$job_list{'4DVminim'}{'ZZOMP'}         = 'export OMP_NUM_THREADS=1' ;
+
+
+
+# Forecast/Dfi
+$job_list{'Dfi'}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node='.$taskspn ;
+$job_list{'Dfi'}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks='.$nproc_fc ;
+$job_list{'Dfi'}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task='.$memory_low.'MB' ;
+$job_list{'Dfi'}{'ENV'}           = $submit_type.'-v OMP_NUM_THREADS='.$ompthr_fc ;
+$job_list{'Dfi'}{'ZZOMP'}         = 'export OMP_NUM_THREADS='.$ompthr_fc;
+$job_list{'Dfi'}{'ZZENV'}         = 'export XLSMPOPTS="STACK=134217728"';
+$job_list{'Dfi'}{'ZZMPI1'}        = 'export MP_TASK_AFFINITY=MCM';
+$job_list{'Dfi'}{'ZNPROC_IO'}     = 'export NPROC_IO='.$nproc_io;
+$job_list{'Dfi'}{'ZMPPEXEC'}      = 'export MPPEXEC=\'eval yt() { aprun -n 1 -N 1 $bind "$@" : -n '.($nproc_fc - 1).' $bind "$@"; }; yt\'' ;
+
+$job_list{'Forecast'}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=1:'.$tasks_low ;
+$job_list{'Forecast'}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=1:'.$nproc_fc ;
+$job_list{'Forecast'}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task='.$memory_low.'MB' ;
+$job_list{'Forecast'}{'ENV'}           = $submit_type.'-v OMP_NUM_THREADS=1:'.$ompthr_fc ;
+if ( $ompthr_fc > 1 ){
+ $job_list{'Forecast'}{'ZZOMPNES'}         = 'export OMP_NESTED=false';
+ $job_list{'Forecast'}{'ZZOMPDYN'}         = 'export OMP_DYNAMIC=false';
+ $job_list{'Forecast'}{'ZZOMPSTA'}         = 'export OMP_STACKSIZE=256m';
+ $job_list{'Forecast'}{'ZZENVSTA'}         = 'export STACKSIZE=256m';
+ $job_list{'Forecast'}{'ZZULIMST'}         = 'ulimit -s 256000';
+ $job_list{'Forecast'}{'ZZTHRSAF'}         = 'export MPICH_MAX_THREAD_SAFETY=multiple';
+ $bind='-cc cpu -ss';
+}
+$job_list{'Forecast'}{'ZMPPEXEC'}      = 'export MPPEXEC=\'eval yt() { aprun -n 1 -N 1 $bind "$@" : -n '.($nproc_fc - 1).' $bind "$@"; }; yt\'' ;
+$job_list{'Forecast'}{'ZZOMP'}         = 'export OMP_NUM_THREADS='.$ompthr_fc;
+$job_list{'Forecast'}{'ZZENV'}         = 'export XLSMPOPTS="STACK=134217728"';
+$job_list{'Forecast'}{'ZZMPI1'}        = 'export MP_TASK_AFFINITY=MCM';
+$job_list{'Forecast'}{'ZNPROC_IO'}     = 'export NPROC_IO='.$nproc_io;
+
+$job_list{'Listen'}{'ZNPROC_IO'}       = 'export NPROC_IO='.$nproc_io;
+
+# Soda_oi_main/SODA
+$job_list{'Soda_oi_main'}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=1' ;
+$job_list{'Soda_oi_main'}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=1' ;
+$job_list{'Soda_oi_main'}{'RESOURCES'}     = $submit_type.'resources      = ConsumableCPUs('.$ompthr_oim.') ConsumableMemory(12000 MB)' ;
+$job_list{'Soda_oi_main'}{'ENV'}           = $submit_type."environment    = OMP_NUM_THREADS=$ompthr_oim";
+$job_list{'Soda_oi_main'}{'ZZOMP'}         = 'export OMP_NUM_THREADS='.$ompthr_oim;
+
+# Build_rootpack
+$job_list{'Build_rootpack'}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=8' ;
+$job_list{'Build_rootpack'}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=8' ;
+$job_list{'Build_rootpack'}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=8000MB' ;
+$job_list{'Build_rootpack'}{'ZNPROC'}        = 'export NPROC=8' ;
+$job_list{'Build_rootpack'}{'ZGMK_THREADS'}  = 'export GMK_THREADS=8' ;
+
+# Makeup_configure
+#$job_list{'Makeup_configure'}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=8' ;
+#$job_list{'Makeup_configure'}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=16' ;
+#$job_list{'Makeup_configure'}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=1000MB' ;
+
+# Makeup
+$job_list{'Makeup'}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=16' ;
+$job_list{'Makeup'}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=16' ;
+$job_list{'Makeup'}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=1000MB' ;
+$job_list{'Makeup'}{'ZNPROC'}        = 'export NPROC=16' ;
+$job_list{'Makeup'}{'CLASS'}         = $submit_type.'-q nf' ;
+
+# Cheap obsmon tasks
+for $task ( 'obsmon_stat_synop_sfc','obsmon_stat_synop', 
+            'obsmon_stat_temp','obsmon_stat_aircraft', 'obsmon_stat_pilot',
+            'obsmon_stat_atms','obsmon_stat_amv','obsmon_stat_msu',
+            'obsmon_stat_paob', 'obsmon_stat_scatt',
+            'obsmon_stat_radar','obsmon_stat_limb' ){
+ $job_list{$task}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=8' ;
+ $job_list{$task}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=8' ;
+ $job_list{$task}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=1000MB' ;
+ $job_list{$task}{'ZmaxPartsAtSameTime'} = 'export maxPartsAtSameTime=8' ;
+ $job_list{$task}{'CLASS'}         = $submit_type.'-q nf' ;
+}
+
+# Heavy obsmon tasks
+for $task ( 'obsmon_stat_amsua','obsmon_stat_amsub', 'obsmon_stat_iasi'){
+ $job_list{$task}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=8' ;
+ $job_list{$task}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=8' ;
+ $job_list{$task}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=4800MB' ;
+ $job_list{$task}{'ZmaxPartsAtSameTime'} = 'export maxPartsAtSameTime=8' ;
+ $job_list{$task}{'CLASS'}         = $submit_type.'-q nf' ;
+}
+
+# multitask obsmon tasks
+for $task ( 'obsmon_stat_ecma', 'obsmon_stat_ccma'){
+ $job_list{$task}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=78' ;
+ $job_list{$task}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=26' ;
+ $job_list{$task}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=3000MB' ;
+ $job_list{$task}{'CLASS'}         = $submit_type.'-q np' ;
+}
+for $task ( 'obsmon_stat_sfc'){
+ $job_list{$task}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=3' ;
+ $job_list{$task}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=3' ;
+ $job_list{$task}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=1000MB' ;
+ $job_list{$task}{'CLASS'}         = $submit_type.'-q np' ;
+}
+
+# Prep_ini_surfex
+#
+for $task ( 'Prep_ini_surfex','4DVprolog_surfex'){
+ $job_list{$task}{'RESOURCES'}        = $submit_type.'-l EC_memory_per_task='. int(58000/$ompthr_pis) .'MB' ;
+ $job_list{$task}{'ENV'}              = $submit_type.'-v OMP_NUM_THREADS='.$ompthr_pis;
+ $job_list{$task}{'THREADS_PER_TASK'} = $submit_type.'-l EC_threads_per_task='.$ompthr_pis;
+ $job_list{$task}{'ZOMP_NUM_THREADS'} = 'export OMP_NUM_THREADS='.$ompthr_pis;
+ $job_list{$task}{'ZOMP_STACKSIZE'}   = 'export OMP_STACKSIZE=128m';
+ $job_list{$task}{'CLASS'}            = $submit_type.'-q nf';
+ $job_list{$task}{'ZDR_HOOK_NOT_MPI'} = 'export DR_HOOK_NOT_MPI=0' ;
+}
+
+# gl_bd,Fldextr runs with OpenMP
+for $task ('Listen4Makegrib','gl_bd','Fldextr') {
+  $job_list{$task}{'CLASS'}            = $submit_type.'-q nf';
+  $job_list{$task}{'RESOURCES'}        = $submit_type.'-l EC_memory_per_task='. int(58000/$ompthr_gl) .'MB' ;
+  $job_list{$task}{'ENV'}              = $submit_type.'-v OMP_NUM_THREADS='.$ompthr_gl;
+  $job_list{$task}{'TASK_PER_NODE'}    = $submit_type.'-l EC_tasks_per_node=1' ;
+  $job_list{$task}{'TOTAL_TASKS'}      = $submit_type.'-l EC_total_tasks=1' ;
+  $job_list{$task}{'THREADS_PER_TASK'} = $submit_type.'-l EC_threads_per_task='.$ompthr_gl;
+  $job_list{$task}{'ZOMP_NUM_THREADS'} = 'export OMP_NUM_THREADS='.$ompthr_gl;
+  $job_list{$task}{'ZOMP_STACKSIZE'}   = 'export OMP_STACKSIZE=128m';
+}
+$job_list{'Listen4Makegrib'}{'ZLISTENER_MAXPIDS'}   = 'export LISTENER_MAXPIDS=2';
+
+
+# PGD
+for $task ( 'Prepare_pgd_lfi','Prepare_pgd_fa', 
+            'Prepare_pgd_lfi_Lowres','Prepare_pgd_fa_Lowres',
+            ) {
+  $job_list{$task}{'RESOURCES'} = $submit_type.'-l EC_memory_per_task=16000MB' ;
+  $job_list{$task}{'ZDR_HOOK_NOT_MPI'} = 'export DR_HOOK_NOT_MPI=0' ;
+}
+
+for $task ( 'Femars'  ) {
+  $job_list{$task}{'RESOURCES'} = $submit_type.'-l EC_memory_per_task=40000MB' ;
+  $job_list{$task}{'ZDR_HOOK_NOT_MPI'} = 'export DR_HOOK_NOT_MPI=0' ;
+}
+
+
+
+for $task ('Prepare_pgd_lfi','Prepare_pgd_lfi_Lowres','Prepare_pgd_fa','Prepare_pgd_fa_Lowres') {
+ $job_list{$task}{'ZZMODULE_LOAD'} = 'module load gdal/1.11.1 ';
+}
+
+$job_list{'BlendBgpert'}{'ZENSSIZE'}      = 'export ENSSIZE='.$ENV{ENSSIZE} ;
+$job_list{'ListenMbr'}{'ZENSSIZE'}      = 'export ENSSIZE='.$ENV{ENSSIZE} ;
+$job_list{'Femars'}{'ZENSSIZE'}      = 'export ENSSIZE='.$ENV{ENSSIZE} ;
+
+# Festat, the number of nproc required depends on your sample
+$nproc_festat=240;
+$job_list{'Festat'}{'TASK_PER_NODE'}    = $submit_type.'-l EC_tasks_per_node=24' ;
+$job_list{'Festat'}{'TOTAL_TASKS'}      = $submit_type.'-l EC_total_tasks='.$nproc_festat ;
+$job_list{'Festat'}{'RESOURCES'}        = $submit_type.'-l EC_memory_per_task=2500MB' ;
+$job_list{'Festat'}{'THREADS_PER_TASK'} = $submit_type.'-l EC_threads_per_task=1' ;
+$job_list{'Festat'}{'ZMPPEXEC'}         = 'export MPPEXEC="aprun -n '.$nproc_festat.'"' ;
+
+
+# Postpp etc.
+for $task ( 'Listen4Postpp','fph2l' ) {
+    $job_list{$task}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=4' ;
+    $job_list{$task}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=1' ;
+    $job_list{$task}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=12000MB' ;
+    $job_list{$task}{'ZNPROC'}        = 'export NPROC=4' ;
+    $job_list{$task}{'ZNPROCX'}       = 'export NPROCX=1' ;
+    $job_list{$task}{'ZNPROCY'}       = 'export NPROCY=4' ;
+}
+
+for $task ( '4DVprolog','fpl2h_fg','fpl2h_an' ) {
+    $job_list{$task}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node=6' ;
+    $job_list{$task}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks=1' ;
+    $job_list{$task}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=8000MB' ;
+    $job_list{$task}{'ZMPPEXEC'}      = 'export MPPEXEC="aprun -n 6"' ;
+    $job_list{$task}{'ZNPROC'}        = 'export NPROC=6' ;
+    $job_list{$task}{'ZNPROCX'}       = 'export NPROCX=1' ;
+    $job_list{$task}{'ZNPROCY'}       = 'export NPROCY=6' ;
+}
+
+# Set NPOOLS correctly
+$job_list{'FirstGuess'}{'ZNPOOLS'}     = 'export NPOOLS='.$npools ;
+$job_list{'Bator'}{'ZNPOOLS'}          = 'export NPOOLS='.$npools ;
+$job_list{'Bator'}{'ZNPOOLS_CANARI'}   = 'export NPOOLS_CANARI='.$npools_canari ;
+$job_list{'Bator'}{'RESOURCES'}        = $submit_type.'-l EC_memory_per_task=16000MB' ;
+
+$task = 'Canari' ;
+$job_list{$task}{'TASK_PER_NODE'} = $submit_type.'-l EC_tasks_per_node='.$npools_canari ;
+$job_list{$task}{'TOTAL_TASKS'}   = $submit_type.'-l EC_total_tasks='.$npools_canari ;
+$job_list{$task}{'RESOURCES'}     = $submit_type.'-l EC_memory_per_task=8000MB' ;
+$job_list{$task}{'ZNPROC'}        = 'export NPROC='.$npools_canari ;
+$job_list{$task}{'ZNPROCX'}       = 'export NPROCX=1' ;
+$job_list{$task}{'ZNPROCY'}       = 'export NPROCY='.$npools_canari ;
+$job_list{$task}{'ZMPPEXEC'}      = 'export MPPEXEC="aprun -n '.$npools_canari.'"' ;
+$job_list{$task}{'ZNPOOLS'}       = 'export NPOOLS='.$npools_canari ;
+
+
+###########################
+# End of user definitions #
+###########################
+
+ return &return_job($job) ;
+
+}
+########################################
+########################################
+########################################
+sub print_job {
+  $family = shift ;
+  for $role ( sort keys %{ $job_list{$family} } ) {
+    print "$job_list{$family}{$role} \n";
+  }
+}
+
+1;
