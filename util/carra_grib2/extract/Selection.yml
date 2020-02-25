@@ -1,0 +1,79 @@
+level:
+  pl:
+    default:
+      ltype: 3
+      rules: 'rulez.hirlam.convert.pl.batch'
+      filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib_fp'
+    c:
+      rules: 'rulesc.hirlam.convert.pl.batch'
+    cl:
+      rules: 'rulescl.hirlam.convert.pl.batch'
+    r:
+      rules: 'rulesr.hirlam.convert.pl.batch'
+
+  hl:
+    default:
+      ltype: 4
+      rules: 'rulez.hirlam.convert.hlana.batch'
+      filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib_fp'
+      fc:
+        rules: 'rulez.hirlam.convert.hl.batch'
+    c:
+      rules: 'rulesc.hirlam.convert.hl.batch'
+    cl:
+      rules: 'rulescl.hirlam.convert.hl.batch'
+    r:
+      rules: 'rulesr.hirlam.convert.hl.batch'
+
+  ml:
+    default:
+      ltype: 2
+      rules: 'rulez.hirlam.convert.ml.batch'
+      filepattern: 'ba@YYYY@@MM@@DD@@HH@+@LLL@grib'
+      fc:
+        filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib'
+    c:
+      rules: 'rulesc.hirlam.convert.ml.batch'
+    cl:
+      rules: 'rulescl.hirlam.convert.ml.batch'
+    r:
+      rules: 'rulesr.hirlam.convert.ml.batch'
+
+  sfc:
+    default:
+      ltype: 0
+      rules: 'rulez.hirlam.convert.sl.batch'
+      filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib_sfx'
+    c:
+      rules: 'rulesc.hirlam.convert.sl.batch'
+    cl:
+      rules: 'rulescl.hirlam.convert.sl.batch'
+    r:
+      rules: 'rulesr.hirlam.convert.sl.batch'
+      filepattern: 'sa@YYYY@@MM@@DD@@HH@+@LLL@grib'
+      fc:
+        filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib_fp'
+    full:
+      rules: 'rulez.hirlam.convert.full.batch'
+      filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib'
+    lsm:
+      rules: 'rulez.hirlam.convert.lsm.batch'
+      filepattern: 'ba@YYYY@@MM@@DD@@HH@+@LLL@grib'
+    oro:
+      rules: 'rulez.hirlam.convert.oro.batch'
+      filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib'
+    sicesnow:
+      rules: 'rulez.hirlam.convert.sicesnow.batch'
+    canari:
+      rules: 'rulez.hirlam.convert.canari.batch'
+      filepattern: 'sa@YYYY@@MM@@DD@@HH@+@LLL@grib'
+
+  soil:
+    default:
+      ltype: 4
+      rules: 'rulez.hirlam.convert.soil.batch'
+      filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib_sfx'
+    sn:
+      rules: 'rulez.hirlam.convert.soil.sn.batch'
+    alb:
+      rules: 'rulez.hirlam.convert.alb.batch'
