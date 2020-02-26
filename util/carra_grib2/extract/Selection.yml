@@ -1,3 +1,7 @@
+cycles:
+  long: [0,1,2,3,4,5,6,9,12,15,18,21,24,27,30]
+  short: [0,1,2,3]
+
 level:
   pl:
     default:
@@ -7,7 +11,7 @@ level:
     c:
       rules: 'rulesc.hirlam.convert.pl.batch'
     cl:
-      rules: 'rulescl.hirlam.convert.pl.batch'
+      rules: 'rulecl.hirlam.convert.pl.batch'
     r:
       rules: 'rulesr.hirlam.convert.pl.batch'
 
@@ -18,10 +22,8 @@ level:
       filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib_fp'
       fc:
         rules: 'rulez.hirlam.convert.hl.batch'
-    c:
-      rules: 'rulesc.hirlam.convert.hl.batch'
     cl:
-      rules: 'rulescl.hirlam.convert.hl.batch'
+      rules: 'rulecl.hirlam.convert.hl.batch'
     r:
       rules: 'rulesr.hirlam.convert.hl.batch'
 
@@ -35,9 +37,7 @@ level:
     c:
       rules: 'rulesc.hirlam.convert.ml.batch'
     cl:
-      rules: 'rulescl.hirlam.convert.ml.batch'
-    r:
-      rules: 'rulesr.hirlam.convert.ml.batch'
+      rules: 'rulecl.hirlam.convert.ml.batch'
 
   sfc:
     default:
@@ -46,8 +46,6 @@ level:
       filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib_sfx'
     c:
       rules: 'rulesc.hirlam.convert.sl.batch'
-    cl:
-      rules: 'rulescl.hirlam.convert.sl.batch'
     r:
       rules: 'rulesr.hirlam.convert.sl.batch'
       filepattern: 'sa@YYYY@@MM@@DD@@HH@+@LLL@grib'
@@ -56,17 +54,21 @@ level:
     full:
       rules: 'rulez.hirlam.convert.full.batch'
       filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib'
+      steps: [0,1,2]
     lsm:
       rules: 'rulez.hirlam.convert.lsm.batch'
       filepattern: 'ba@YYYY@@MM@@DD@@HH@+@LLL@grib'
+      steps: [0]
     oro:
       rules: 'rulez.hirlam.convert.oro.batch'
       filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib'
+      steps: [0]
     sicesnow:
       rules: 'rulez.hirlam.convert.sicesnow.batch'
     canari:
       rules: 'rulez.hirlam.convert.canari.batch'
       filepattern: 'sa@YYYY@@MM@@DD@@HH@+@LLL@grib'
+      steps: [0]
 
   soil:
     default:
