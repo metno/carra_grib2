@@ -97,6 +97,16 @@ def prep_tasks(dt, task_specs, outdir, archive):
             ptasks.append(ptask)
     return ptasks
 
+
+def dump_inputfiles(ptasks):
+    infiles = []
+    for ptask in ptasks:
+        f = ptask['infile']
+        if f not in infiles:
+            infiles.append(f)
+            print(f)
+
+
 def process_tasks(ptasks,ruledir):
     pids = {}
     logs = {}
@@ -122,12 +132,24 @@ def process_tasks(ptasks,ruledir):
 
 if __name__ == '__main__':
     import sys
+    import argparse
 
-    dt = datetime.datetime.strptime(sys.argv[1], '%Y%m%d%H')
-    carrabin = sys.argv[2]
-    archive = sys.argv[3]
+    parser = argparse.ArgumentParser(description='prepare and process grib_filter rules')
+    parser.add_argument('dtg', type=str, help='date time group')
+    parser.add_argument('--archive', type=str, required=True, help='path to input files')
+    parser.add_argument('--carrabin', type=str, required=True, help='path to installation, util/carra_grib2/extract')
+    parser.add_argument('-d','--dump',action='store_true',help='dump a list of inputfiles')
+    args = parser.parse_args()
+
+    dt = datetime.datetime.strptime(args.dtg, '%Y%m%d%H')
+    carrabin = args.carrabin
+    archive = args.archive
     outdir = '.'
 
     task_specs = prep_selection_config(dt, carrabin+'/Selection.yml')
     ptasks = prep_tasks(dt, task_specs, outdir, archive)
-    process_tasks(ptasks,carrabin)
+    if args.dump:
+        dump_inputfiles(ptasks)
+    else:
+        process_tasks(ptasks,carrabin)
+

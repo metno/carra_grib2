@@ -34,6 +34,7 @@ level:
       filepattern: 'ba@YYYY@@MM@@DD@@HH@+@LLL@grib'
       fc:
         filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib'
+        steps: [0,1,2]
     c:
       rules: 'rulesc.hirlam.convert.ml.batch'
     cl:
