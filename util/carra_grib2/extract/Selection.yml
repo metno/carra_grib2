@@ -55,7 +55,6 @@ level:
     full:
       rules: 'rulez.hirlam.convert.full.batch'
       filepattern: 'fc@YYYY@@MM@@DD@@HH@+@LLL@grib'
-      steps: [0,1,2]
     lsm:
       rules: 'rulez.hirlam.convert.lsm.batch'
       filepattern: 'ba@YYYY@@MM@@DD@@HH@+@LLL@grib'

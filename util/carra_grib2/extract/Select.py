@@ -113,21 +113,20 @@ def process_tasks(ptasks,ruledir):
     for i in range(len(ptasks)):
         rule = fill_rule(ptasks[i], ruledir, ptasks[i]['outfile']+'.rule')
         args = ['grib_filter', rule, ptasks[i]['infile']]
-#        args = ['./process.sh']
-        logfile = open('log'+str(i),'w')
-        p = subprocess.Popen(args, stdout=logfile,stderr=logfile)
+        p = subprocess.Popen(args)
         pids[p.pid] = p
-        logs[p.pid] = logfile
-        affinity = len(os.sched_getaffinity(0))
-        while len(pids) >= affinity - 1:
+        affinity = max([len(os.sched_getaffinity(0))-1,1])
+        while len(pids) >= affinity:
+            print("wait for resources")
             for pid in pids:
                 if pids[pid].poll() is not None:
                     pids.pop(pid)
-                    logs[pid].close()
                     print(pid, 'done')
                     break
-
-
+    for pid in pids:
+        pids[pid].wait()
+        print(pid, 'done')
+        
 
 
 if __name__ == '__main__':
