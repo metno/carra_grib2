@@ -1,0 +1,153 @@
+! Harmonie (including EPS)
+! Indentation rules for this file:
+!  - preprocessing constructs (if,loop) follow their own indentation, with
+!    2 new spaces for each new nested level
+!  - definiton file constructs (suite,family,task,trigger,complete,edit,...)
+!    are indented 3 new spaces for each new "level"
+! Please respect this when updating the file, it makes reading it easier
+<PRE>
+
+suite $ENV{EXP}
+
+edit USER $ENV{USER}
+edit OWNER $ENV{USER}
+
+if ( $ENV{SCHEDULER} eq 'ECFLOW' )
+ edit ECF_INCLUDE $ENV{HM_LIB}/ecf
+ edit ECF_FILES   $ENV{HM_LIB}/ecf
+else
+ edit SMSINCLUDE $ENV{HM_LIB}/sms
+ edit SMSFILES   $ENV{HM_LIB}/sms
+endif
+
+edit SMSTRIES 1
+edit ECFTRIES 2
+edit EXP $ENV{EXP}
+edit ARGS ""		             # default arguments to a script
+edit ENVT ""		             # default environment to a script
+edit YMD $ENV{StartDate}             # use first date outside loops
+edit HH $ENV{StartHour}	             # use first hour outside loops
+edit Env_system $ENV{ENV_SYSTEM}     # default
+edit HM_REV $ENV{HM_REV}	     # effectively define HARMONIE version
+edit PP ""		             # for progress.log and progressPP.log
+edit ENSMBR -1                       # ensemble member, -1 for deterministic mode
+edit HM_WD $ENV{HM_WD}
+edit HM_DATA "$ENV{HM_DATA}"
+edit HM_LIB "$ENV{HM_LIB}"
+edit DTGBEG $ENV{DTGBEG}
+edit DTGEND $ENV{DTGEND}
+edit FORCE_BUILD ""
+edit LBCN 0
+edit StartDate $ENV{StartDate}
+edit StartHour $ENV{StartHour}
+
+if ( $ENV{SCHEDULER} eq 'ECFLOW' )
+ edit ECF_HOME $ENV{JOBOUTDIR}
+ edit ECF_KILL_CMD "echo not working"
+ edit ECF_OUT $ENV{JOBOUTDIR}
+ edit ECF_JOBOUT $ENV{JOBOUTDIR}%ECF_NAME%.%ECF_TRYNO%
+ edit ECF_JOB_CMD "perl -S %HM_LIB%/scr/Submit.pl -e %ENSMBR% -y %YMD% -h %HH% -d %HM_DATA% -o %ECF_JOBOUT% -s %ECF_NODE% -p %ECF_PORT% %ECF_JOB% >> %HM_DATA%/ECF.log 2>&1"
+ edit ECF_LOGHOST $ENV{ECF_LOGHOST}
+ edit ECF_LOGPORT $ENV{ECF_LOGPORT}
+else
+ include system.inc
+ edit SMSJOBOUT $ENV{JOBOUTDIR}%SMSNAME%.%SMSTRYNO%
+ edit SMSCMD "perl -S %HM_LIB%/scr/Submit.pl -e %ENSMBR% -y %YMD% -h %HH% -d %HM_DATA% -o %SMSJOBOUT% %SMSJOB% >> %HM_DATA%/mSMS.log 2>&1"
+endif
+
+   task InitRun
+
+   family Date
+      trigger ( InitRun == complete )
+      repeat date YMD $ENV{StartDate} $ENV{EndDate}
+      complete [ $ENV{COMPLETE_FAMILY} =~ /:Date:/ ]
+      
+      task Carra_grib_listen
+      task Carra_grib_fetch
+         trigger ( Carra_grib_listen == complete )
+
+
+      task CollectLogs
+         trigger ( ( Carra_grib_fetch == complete or Date == aborted ) )
+         edit ENVT FROM=Date
+
+      task Carra_LogProgress
+        trigger ( Carra_grib_fetch == complete )
+
+   endfamily Date
+
+   family Postprocessing
+      complete [ $ENV{COMPLETE_FAMILY} =~ /:Postprocessing:/ ]
+      repeat date YMD $ENV{StartDatePP} $ENV{EndDate}
+      trigger ( InitRun == complete )
+
+loop(HH,0,21,3)
+      family Hour@HH@
+         complete ( ( ( ../Postprocessing:YMD <= $ENV{StartDatePP} ) and \
+                                    ( @HH@    <  $ENV{StartHourPP} ) ) or \
+                    ( ( ../Postprocessing:YMD >= $ENV{EndDate}     ) and \
+                                    ( @HH@    >  $ENV{EndHour}     ) ) )
+      edit HH @HH@
+      family Cycle
+         trigger  ( ../../Date:YMD >  ../../Postprocessing:YMD  )
+
+           family Carra_grib_convert
+               complete [ $ENV{CARRA_GRIB2_CONVERT} ne 'yes' ]
+               task Carra_grib_extract
+               task Carra_grib_archive
+                   trigger ( Carra_grib_extract == complete )
+               task Carra_grib_save4later
+                   trigger ( Carra_grib_extract == complete )
+               task Carra_grib_gallery
+                   complete [ "1" == "1" ]
+                   trigger (Carra_grib_archive == complete )
+            endfamily Carra_grib_convert
+      endfamily # Cycle
+
+      family Disk_cleaning
+         trigger ( Cycle == complete )
+         task SaniDisk
+      endfamily # Disk_cleaning
+
+      task CollectLogs
+         trigger ( ( Cycle == complete and Disk_cleaning == complete ) or \
+                   ( Cycle == aborted or Disk_cleaning == aborted ) )
+if( $ENV{ENSMFAIL} > 0 )
+         edit ENVT 'FROM=Postprocessing noABTonABT=1' 
+else
+         edit ENVT FROM=Postprocessing/Hour@HH@
+endif
+
+      task LogProgress
+         edit PP PP
+if( @HH@ == 0 )
+         trigger ( Cycle == complete and Disk_cleaning == complete and \
+                   CollectLogs == complete )
+else
+         trigger ( Cycle == complete and Disk_cleaning == complete and \
+                   CollectLogs == complete and \
+                   ../Hour@HH-1@/LogProgress == complete )
+endif
+
+      endfamily # Hour@HH@
+endloop
+
+   task Carra_grib_push_day_2_mars
+      trigger ( Hour0 == complete and \
+                Hour3 == complete and \
+                Hour6 == complete and \
+                Hour9 == complete and \
+                Hour12 == complete and \
+                Hour15 == complete and \
+                Hour18 == complete and \
+                Hour21 == complete )
+
+
+   endfamily # Postprocessing
+
+   task Wrapup
+      trigger ( Postprocessing == complete )
+
+endsuite
+
+</PRE>

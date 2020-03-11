@@ -1,0 +1,11 @@
+%include <sms.h>
+%include <hosts.h>
+
+%manual
+Carra_LogProgess.sms: Update progress.log, progressPP.log or progressMCI.log
+%end
+
+export PP=%PP%
+perl -S Carra_LogProgress.pl || exit
+
+%include <end.h>

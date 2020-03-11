@@ -1,0 +1,204 @@
+#!/bin/ksh
+set -ex
+
+set -ax 
+
+. header.sh
+
+cd $WRK
+WDIR=`hostname`$$
+Workdir $WDIR
+
+
+trap "Trapbody $WDIR ; exit 1" 0
+
+
+
+############################################################
+# script for HARMONIE CARRA data processing:
+#  - conversion to CARRA-GRIB2
+#  - archiving in MARS
+#  - checking what was archived
+
+############################################################
+
+dtg=$DTG
+#dtg=$1
+date=$(echo $dtg | cut -c1-8)
+hh=$(echo $dtg | cut -c9-10)
+
+# Convert precise fields for given $date, $type and $levtype and write them to $outdir
+convert=1
+if [ "$CARRA_GRIB2_ARCHIVE" == "yes" ];then
+  archive=1
+  echo "WARNING! You are pushing to MARS $MARS_DATABASE"
+else
+  archive=0
+  echo "INFO! skip pushing to MARS"
+fi
+
+
+database=${MARS_DATABSE-marsscratch}
+version=prod # MARS expver of PRECISE data for production
+levtypes="sfc pl ml hl soil"
+types="an fc"
+
+## Archive all grib2 data in $outdir in one go
+## setting archive=0 for testing that things are set up properly
+## when running first time, for testing that all is ok...use test env.
+## set archive = 1 when all is ok for using it for real...
+# for testing purpuse only use next line, as well as version=test, a few lines down...
+#archive=1
+## when done with testing, comment above and use next line (uncomment first)
+#archive=1
+##        then when all is ok set version=prod also do not forget to 
+
+# directory set up
+bin=$HM_LIB/util/carra_grib2/archive # location of script and grib_filter rule files
+
+############################################################
+
+echo $ECCODES_DEFINITION_PATH
+export ECCODES_DEFINITION_PATH=/usr/local/apps/eccodes/2.15.0/GNU/63/share/eccodes/definitions
+GRIB_DEFINITION_PATH_TMP=$GRIB_DEFINITION_PATH
+export GRIB_DEFINITION_PATH=""
+module swap gcc/6.3.0
+module unload grib_api
+module unload eccodes
+module load eccodes/2.15.0
+module load python3/3.6.8-01
+
+
+#grib_info
+
+if [[ "$version" == "prod" ]] ; then
+  expver="prod"
+elif [[ "$version" == "test" ]] ; then
+  expver="test"
+fi
+
+if [[ "$DOMAIN" == "CARRA_NE" ]]; then
+   origin="NO-AR-CE"
+   suiteName="no-ar-ce"
+elif [[ "$DOMAIN" == "CARRA_SW" || "$DOMAIN" == "IGB" ]];then
+   origin="NO-AR-CW"
+   suiteName="no-ar-cw"
+fi
+
+if [[ "$hh" == "00" || "$hh" == "12" ]]; then
+  archived_expected=8677
+  fclen="long"
+else
+  archived_expected=3881
+  fclen="short"
+fi
+
+archived_expected=40640
+
+if [[ "$archive" == "1" ]] ; then
+  ###########
+  # archive
+
+  rm -f archive.batch
+
+  for hh in 00 03 06 09 12 15 18 21; do
+    ls $HM_DATA/${date}_${hh}/carra_grib2/*.${date}.*.grib2 | grep -v archive.batch >> flist
+  done
+  for f in $(cat flist) ; do
+    ln -fs $f .
+    basenam="$(basename -- $f)"
+    dirnam="$(dirname -- $f)"
+    cat $dirnam/archive.batch_$basenam >> archive.batch
+    #python3 $bin/make_archive_request.py "$(basename -- $f)" '--database' $database >> archive.batch
+  done
+
+  s=0
+  for i in $(grep EXPECT archive.batch | sed 's/[^0-9]*//g');do
+    s=$((s + $i))
+  done
+
+  if [[ "$s" != "$archived_expected" ]]; then
+    echo "$date: Different number of fields to be archived than expected: $s ($archived_expected)!"
+    echo "ABORTING!"
+    exit 1
+  fi
+
+  mars -n -t archive.batch || exit 1
+
+  [[ $? != 0 ]] && exit -1
+  
+  #########
+  # check 
+ 
+  # Verify that the expected number of fields ($archived_expected) were archived and the MARS field list 
+  #   for actual day is the same as the reference one ($tree_ref)
+
+  max_tries=3
+  k=0
+  while [ "$k" -lt "$max_tries" ];do
+    all_good=0
+    rm -rf tree.out cost.out
+  
+    mars -n -t << EOF
+list,
+      class      = RR,
+      origin     = $origin,
+      stream     = oper,
+      type       = all,
+      DATE       = $date,
+      levtype    = all,
+      expver     = $version,
+      database   = $database,
+      target     = tree.out,
+      hide       = file/length/offset/id/missing/cost/branch/date/hdate/month/year/time,
+      output     = tree
+
+list,
+      class      = RR,
+      hide       = file/length/offset/id/missing/cost/branch/param/levtype/levelist/expver/type/class/stream/origin/date/time/step/number/hdate/month/year/time,
+      target     = cost.out,
+      output     = table
+EOF
+
+    archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
+    if [[ "$archived" != "$archived_expected" ]] ; then
+      echo "$date: Different number of fields archived than expected: $archived ($archived_expected)! try $k"
+    else
+      all_good=$((all_good + 1))
+    fi
+ 
+    
+    tree_ref=$bin/carra-${suiteName}-${fclen}.tree.reference.out
+    if [[ $(diff tree.out ${tree_ref}) ]] ; then
+      echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs! try $k"
+    else
+      all_good=$((all_good + 1))
+    fi
+  
+    if [[ "$all_good" -eq "2" ]]; then
+      break
+    else
+      echo "try #$k"
+      sleep 5
+    fi
+
+    k=$((k+1))
+
+  done
+  
+  if [[ "$all_good" -eq "2" ]]; then
+    echo "Archiving successful"
+  else
+    echo "Archive check failed!"
+    exit 1
+  fi
+
+fi
+
+#rm -f flist glist rules.batch mars.batch ifile
+
+export GRIB_DEFINITION_PATH=$GRIB_DEFINITION_PATH_TMP
+
+trap - 0
+
+exit

@@ -1,0 +1,47 @@
+#!/bin/ksh
+set -ex
+
+
+. header.sh
+
+module load python3
+
+[[ -s $WRK ]] || $MKDIR $WRK
+cd $WRK
+WDIR=`hostname`$$
+Workdir $WDIR
+
+
+trap "Trapbody $WDIR ; exit 1" 0
+
+
+dtg=$DTG
+date=$(echo $dtg | cut -c1-8)
+yyyy=$(echo $dtg | cut -c1-4)
+mm=$(echo $dtg | cut -c5-6)
+dd=$(echo $dtg | cut -c7-8)
+hh=$(echo $dtg | cut -c9-10)
+
+# directory set up
+#home=$HM_LIB/carra_grib_convert/archive #/home/ms/no/fab0/carra_grib/grib/archive
+carrabin=$HM_LIB/util/carra_grib2/extract/ #  location of script and grib_filter rule files
+
+HM_DATA_PARENT=/scratch/ms/dk/nhx/hm_home/$CARRA_PARENT_EXP/
+ARCHIVE_SCRATCH_PARENT=$HM_DATA_PARENT/archive/
+ARCHIVE_ECFS_PARENT='ec:/nhx/harmonie/'$CARRA_PARENT_EXP
+
+# Prepare files in archive
+for hh in 00 03 06 09 12 15 18 21; do
+  python3 $carrabin/Select.py ${date}$hh --carrabin $carrabin --archive $yyyy/$mm/$dd/$hh -d >> infiles
+done
+
+python3 $carrabin/prepare_gribfiles.py infiles --scratch_archive_root $ARCHIVE_SCRATCH_PARENT \
+                                               --ecfs_archive_root $ARCHIVE_ECFS_PARENT
+
+for hh in 00 03 06 09 12 15 18 21; do
+  [ -d $ARCHIVE_ROOT/$yyyy/$mm/$dd/$hh/ ] || $MKDIR $ARCHIVE_ROOT/$yyyy/$mm/$dd/$hh/
+  ln -sf $WRK/grib_tmp/*${date}$hh* $ARCHIVE_ROOT/$yyyy/$mm/$dd/$hh/
+done
+
+trap - 0
+exit
