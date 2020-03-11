@@ -6,7 +6,7 @@ transient select = @select@ ;
 transient tableVer = @tableVer@ ;
 transient dtg = @dtg@ ;
 transient date = @date@ ;
-transient time = @time@ ;
+#transient time = @time@ ;
 transient step = @step@ ;
 transient ltype = @ltype@ ;
 
@@ -35,7 +35,7 @@ if ( indicatorOfTypeOfLevel == 105 && level == 0 ){
     set typeOfLevel = 'heightAboveGround';
 #    set shortName = 'lsm';
     set dataDate = @date@;
-    set dataTime = @time@;
+#    set dataTime = @time@;
     set table2Version = 253;
     set PVPresent = 0;
     set NV = 0;

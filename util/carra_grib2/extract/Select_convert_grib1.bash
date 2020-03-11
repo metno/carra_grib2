@@ -16,7 +16,7 @@ echo archvive=$ARCHIVE
 
 python3 $carrabin/Select.py $iy$im$id$ih --carrabin $carrabin --archive $ARCHIVE
 rm *.rule
-
+mv *grib1* $out1/
 
 $carrabin/Convert_oro.ksh || exit 1 
 $carrabin/Convert_121.ksh || exit 1

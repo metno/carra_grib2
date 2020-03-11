@@ -36,6 +36,8 @@ else
   archive=0
   echo "INFO! skip pushing to MARS"
 fi
+archive=0 # do archiving when a full day is complete
+
 
 database=${MARS_DATABSE-marsscratch}
 version=prod # MARS expver of PRECISE data for production
@@ -56,6 +58,10 @@ types="an fc"
 bin=$HM_LIB/util/carra_grib2/archive # location of script and grib_filter rule files
 inpdir=$WRK/carra_grib1 # input hirlam grib1 dir
 outdir=$WRK/carra_grib2 # output grib2 dir
+
+[ -d $outdir ] || $MKDIR $outdir
+[ -d ${outdir}_tmp ] || $MKDIR ${outdir}_tmp
+
 
 ############################################################
 
@@ -92,6 +98,7 @@ fi
 if [[ "$convert" == "1" ]] ; then
 
   rm -f $outdir/*$date*.grib2
+  rm -f ${outdir}_tmp/*$date*.grib2
   for type in $types ; do
     if [[ "$type" == "fc" ]] ; then
       xlevtypes=$levtypes
@@ -108,7 +115,7 @@ if [[ "$convert" == "1" ]] ; then
       ls $inpdir/${type}_${levtype}_${date}*.grib1 > flist
  
       cat flist
-      sed "s|@outdir@|$outdir|g;s|@version@|$expver|g;s|@type@|$type|g;s|@origin@|$origin|g" $bin/$frules > rules.batch
+      sed "s|@outdir@|${outdir}_tmp|g;s|@version@|$expver|g;s|@type@|$type|g;s|@origin@|$origin|g" $bin/$frules > rules.batch
 
       for f in $(cat flist) ; do
 #        grib_info
@@ -133,18 +140,25 @@ else
   fclen="short"
 fi
 
+ls ${outdir}_tmp/*.${date}.*.grib2 > flist
+for f in $(cat flist) ; do
+#    ln -fs $f .
+  basenam="$(basename -- $f)"
+  grib_set "-scentre=enmi,tablesVersion=23,productionStatusOfProcessedData=10,grib2LocalSectionPresent=1,suiteName=$suiteName" $f  $basenam
+  tigge_check -u -c  "$(basename -- $f)" || exit 1
+  python3 $bin/make_archive_request.py $basenam '--database' $database >> archive.batch_$basenam
+  mv $basenam $outdir/$basenam
+  mv archive.batch_$basenam $outdir/
+done
+
+
+
+
+
 if [[ "$archive" == "1" ]] ; then
 
   ###########
   # archive
-
-  ls $outdir/*.${date}.*.grib2 > flist
-  for f in $(cat flist) ; do
-#    ln -fs $f .
-    grib_set "-scentre=enmi,tablesVersion=23,productionStatusOfProcessedData=10,grib2LocalSectionPresent=1,suiteName=$suiteName" $f "$(basename -- $f)"
-    tigge_check -u -c "$(basename -- $f)" || exit 1
-    python3 $bin/make_archive_request.py "$(basename -- $f)" '--database' $database >> archive.batch
-  done
 
   s=0
   for i in $(grep EXPECT archive.batch | sed 's/[^0-9]*//g');do
@@ -230,6 +244,8 @@ EOF
 
 fi
 
+
+#rm -rf ${outdir}_tmp
 rm -f flist glist rules.batch mars.batch ifile
 
 export GRIB_DEFINITION_PATH=$GRIB_DEFINITION_PATH_TMP
