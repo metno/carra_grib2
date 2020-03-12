@@ -144,9 +144,9 @@ ls ${outdir}_tmp/*.${date}.*.grib2 > flist
 for f in $(cat flist) ; do
 #    ln -fs $f .
   basenam="$(basename -- $f)"
-  grib_set "-scentre=enmi,tablesVersion=23,productionStatusOfProcessedData=10,grib2LocalSectionPresent=1,suiteName=$suiteName" $f  $basenam
-  tigge_check -u -c  "$(basename -- $f)" || exit 1
-  python3 $bin/make_archive_request.py $basenam '--database' $database >> archive.batch_$basenam
+  time grib_set "-scentre=enmi,tablesVersion=23,productionStatusOfProcessedData=10,grib2LocalSectionPresent=1,suiteName=$suiteName" $f  $basenam
+  time tigge_check -u -c  "$(basename -- $f)" || exit 1
+  time python3 $bin/make_archive_request.py $basenam '--database' $database >> archive.batch_$basenam
   mv $basenam $outdir/$basenam
   mv archive.batch_$basenam $outdir/
 done

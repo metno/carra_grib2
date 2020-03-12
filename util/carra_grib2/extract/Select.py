@@ -3,6 +3,8 @@ import copy
 import datetime
 import subprocess
 import os
+import sys
+import time
 
 
 def fill_pattern(pattern, dt, step):
@@ -64,8 +66,6 @@ def prep_selection_config(dt, configYML='Selection.yml'):
                 elif ttype == 'fc':
                     if len(config['steps']) > 1 and 0 in config['steps']:
                         config['steps'].remove(0)
-                    else:
-                        continue
                 suffix = "" if spec == "default" else spec
                 result = "%s_%s_@YYYY@@MM@@DD@@HH@_@LLL@.grib1%s " % (ttype, level, suffix)
                 task_specs[result] = config
@@ -111,21 +111,25 @@ def process_tasks(ptasks,ruledir):
     pids = {}
     logs = {}
     for i in range(len(ptasks)):
+        print(ptasks[i],file=sys.stderr)
         rule = fill_rule(ptasks[i], ruledir, ptasks[i]['outfile']+'.rule')
         args = ['grib_filter', rule, ptasks[i]['infile']]
+        print(args,file=sys.stderr)
         p = subprocess.Popen(args)
         pids[p.pid] = p
         affinity = max([len(os.sched_getaffinity(0))-1,1])
+        print("affinity=",affinity,file=sys.stderr)
         while len(pids) >= affinity:
-            print("wait for resources")
+            print("wait for resources",file=sys.stderr)
+            time.sleep(1)
             for pid in pids:
                 if pids[pid].poll() is not None:
                     pids.pop(pid)
-                    print(pid, 'done')
+                    print(pid, 'done',file=sys.stderr)
                     break
     for pid in pids:
         pids[pid].wait()
-        print(pid, 'done')
+        print(pid, 'done',file=sys.stderr)
         
 
 

@@ -24,8 +24,12 @@ level:
         rules: 'rulez.hirlam.convert.hlana.batch'
     cl:
       rules: 'rulecl.hirlam.convert.hl.batch'
+      an:
+        rules: 'rulecl.hirlam.convert.hl.batch'
     r:
       rules: 'rulesr.hirlam.convert.hl.batch'
+      an:
+        rules: 'rulesr.hirlam.convert.hl.batch'
 
   ml:
     default:
