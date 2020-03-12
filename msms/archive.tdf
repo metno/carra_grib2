@@ -101,6 +101,17 @@ loop(HH,0,21,3)
                task Carra_grib_gallery
                    complete [ "1" == "1" ]
                    trigger (Carra_grib_archive == complete )
+if ( @HH@ == 21 )
+               task Carra_grib_push_day_2_mars
+                   trigger ( ../../../Hour0/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
+                             ../../../Hour3/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
+                             ../../../Hour6/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
+                             ../../../Hour9/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
+                             ../../../Hour12/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
+                             ../../../Hour15/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
+                             ../../../Hour18/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
+                             ../../../Hour21/Cycle/Carra_grib_convert/Carra_grib_archive == complete )    
+endif
             endfamily Carra_grib_convert
       endfamily # Cycle
 
@@ -131,17 +142,6 @@ endif
 
       endfamily # Hour@HH@
 endloop
-
-   task Carra_grib_push_day_2_mars
-      trigger ( Hour0 == complete and \
-                Hour3 == complete and \
-                Hour6 == complete and \
-                Hour9 == complete and \
-                Hour12 == complete and \
-                Hour15 == complete and \
-                Hour18 == complete and \
-                Hour21 == complete )
-
 
    endfamily # Postprocessing
 
