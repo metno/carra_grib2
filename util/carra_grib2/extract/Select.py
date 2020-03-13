@@ -111,10 +111,10 @@ def process_tasks(ptasks,ruledir):
     pids = {}
     logs = {}
     for i in range(len(ptasks)):
-        print(ptasks[i],file=sys.stderr)
+        #print(ptasks[i],file=sys.stderr)
         rule = fill_rule(ptasks[i], ruledir, ptasks[i]['outfile']+'.rule')
         args = ['grib_filter', rule, ptasks[i]['infile']]
-        print(args,file=sys.stderr)
+        #print(args,file=sys.stderr)
         p = subprocess.Popen(args)
         pids[p.pid] = p
         affinity = max([len(os.sched_getaffinity(0))-1,1])

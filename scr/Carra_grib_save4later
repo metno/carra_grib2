@@ -15,6 +15,9 @@ trap "Trapbody $WDIR ; exit 1" 0
 
 dtg=$DTG
 date=$(echo $dtg | cut -c1-8)
+yyyy=$(echo $dtg | cut -c1-4)
+mm=$(echo $dtg | cut -c5-6)
+dd=$(echo $dtg | cut -c7-8)
 hh=$(echo $dtg | cut -c9-10)
 
 # Convert precise fields for given $date, $type and $levtype and write them to $outdir
@@ -84,7 +87,9 @@ if [[ "$convert" == "1" ]] ; then
 
     done
   done
-
+  ecfs_target="ec:harmonie/$CARRA_PARENT_EXP/$yyyy/$mm/$dd/$hh/"
+  emkdir -p $ecfs_target
+  ecp $ARCHIVE/*save*not_yet.grib1 $ecfs_target
 fi
 
 trap - 0

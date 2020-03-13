@@ -89,7 +89,9 @@ loop(HH,0,21,3)
                                     ( @HH@    >  $ENV{EndHour}     ) ) )
       edit HH @HH@
       family Cycle
-         trigger  ( ../../Date:YMD >  ../../Postprocessing:YMD  )
+         trigger  ( ( ../../Date:YMD >  ../../Postprocessing:YMD ) or \
+                    ( ( ../../Date:YMD == ../../Postprocessing:YMD )  and \
+                      ( ../../Date == complete ) ) )
 
            family Carra_grib_convert
                complete [ $ENV{CARRA_GRIB2_CONVERT} ne 'yes' ]
@@ -112,12 +114,21 @@ if ( @HH@ == 21 )
                              ../../../Hour18/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
                              ../../../Hour21/Cycle/Carra_grib_convert/Carra_grib_archive == complete )    
 endif
-            endfamily Carra_grib_convert
+          endfamily Carra_grib_convert
+
+if ( 1 == 2)
+          task Archive_host1
+              trigger (   Carra_grib_convert/Carra_grib_save4later == complete )
+              complete [ $ENV{COMPCENTRE} ne 'ECMWF' or $ENV{ARCHIVE_ECMWF} eq 'no' ]
+              edit SMSTRIES 2
+endif
+
       endfamily # Cycle
 
       family Disk_cleaning
          trigger ( Cycle == complete )
          task SaniDisk
+         task SaniDisk_host1
       endfamily # Disk_cleaning
 
       task CollectLogs
