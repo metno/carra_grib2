@@ -1,0 +1,15 @@
+121:
+  name: "change_sign"
+  filepattern: "*grib121"
+cc:
+  name: "frac_2_percent"
+  filepattern: "*grib1c"
+cwci:
+  name: "remove_negatives"
+  filepattern: "*grib1cl"
+oro:
+  name: "phi2z"
+  filepattern: "*grib1oro"
+rh:
+  name: "frac_2_percent"
+  filepattern: "*grib1r"
