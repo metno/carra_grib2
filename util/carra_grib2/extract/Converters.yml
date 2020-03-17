@@ -13,3 +13,6 @@ oro:
 rh:
   name: "frac_2_percent"
   filepattern: "*grib1r"
+alb:
+  name: "frac_2_percent"
+  filepattern: "*grib1alb"

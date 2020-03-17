@@ -16,7 +16,7 @@ def run_jobs(conf_dict,grib_dir,nproc=None):
     for key in config:
         infiles = glob.glob(grib_dir+'/'+conf_dict[key]['filepattern'])
         for ifile in infiles:
-            print(key,ifile,conf_dict[key]['name'])
+            #print(key,ifile,conf_dict[key]['name'])
             tasks.append(pool.apply_async(process_gf,args=(ifile,eval(conf_dict[key]['name']),)))
     pool.close()
     pool.join()
@@ -76,12 +76,24 @@ def phi2z(x):
 
 
 if __name__ == "__main__":
+  
+    import argparse
 
-    ymlfile = "/home/asmundb/PycharmProjects/carra_grib2_py/util/carra_grib2/extract/Converters.yml"
+
+    parser = argparse.ArgumentParser(description='convert fields')
+    parser.add_argument('--gribdir', type=str, required=True, help='path to grib files (I/O)')
+    parser.add_argument('--cfg', type=str, required=True, help='yaml file containing conversion rules')
+    args = parser.parse_args()
+
+    
+    ymlfile = args.cfg
+    carra_grib = args.gribdir
+
     config = parse_config(ymlfile)
-    carra_grib = "."
     tic = time.time()
-    p, tasks = run_jobs(config,carra_grib,nproc=3)
+    p, tasks = run_jobs(config,carra_grib)
     for t in tasks:
-        print(t.get())
+        tg = t.get()
+        if tg != 0:
+           print(tg)
     print(time.time() - tic)
