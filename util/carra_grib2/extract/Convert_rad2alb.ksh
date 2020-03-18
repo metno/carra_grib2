@@ -20,7 +20,7 @@ do
   j0=$(echo $i | sed s#_sfc_#_soil_#)
   j=${j0}alb
 #i="/scratch/ms/no/fab0/carra_grib/fc_sfc_2014030203_001.grib1"
-  python $carrabin/convert_rad2alb.py $i $j ${j}on
+  python3 $carrabin/convert_rad2alb.py $i $j ${j}on
 
 
 done

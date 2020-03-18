@@ -22,7 +22,7 @@ for i in $out1/*$dtg*.grib1sicesnow
 do
   echo $i 
   ls -l $i
-  python $carrabin/convert_sicesnow.py $i ${i}depth
+  python3 $carrabin/convert_sicesnow.py $i ${i}depth
 
 done
 

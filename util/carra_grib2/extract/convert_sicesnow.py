@@ -65,6 +65,6 @@ if out_message is not None:
   out_message['level']  = 721 # FIXME: correct level?
   out_message['indicatorOfParameter']  = 141 # FIXME: correct parameter id?
 
-  with open(outfile_snow_depth, 'w') as out_file:
+  with open(outfile_snow_depth, 'wb') as out_file:
     out_message.write(out_file)
 

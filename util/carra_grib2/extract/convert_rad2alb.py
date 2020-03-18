@@ -80,7 +80,7 @@ albedo = np.where(np.isnan(al),undef,al)
 albedo = np.where(albedo<0,undef,albedo)
 
 
-with open(outfile,'w') as test:
+with open(outfile,'wb') as test:
     msg2['values'] = albedo
     msg2.write(test)
 

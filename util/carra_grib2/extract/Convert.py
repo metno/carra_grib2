@@ -12,6 +12,7 @@ def run_jobs(conf_dict,grib_dir,nproc=None):
     if nproc is None:
         nproc = mp.cpu_count() - 1
     pool = mp.Pool(nproc)
+    print("converting with Ntasks=",nproc)
     tasks = []
     for key in config:
         infiles = glob.glob(grib_dir+'/'+conf_dict[key]['filepattern'])
@@ -83,15 +84,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='convert fields')
     parser.add_argument('--gribdir', type=str, required=True, help='path to grib files (I/O)')
     parser.add_argument('--cfg', type=str, required=True, help='yaml file containing conversion rules')
+    parser.add_argument('--npool',default=None, type=int, help='number of pool')
+    
     args = parser.parse_args()
 
     
     ymlfile = args.cfg
     carra_grib = args.gribdir
+    nproc = args.npool
 
     config = parse_config(ymlfile)
     tic = time.time()
-    p, tasks = run_jobs(config,carra_grib)
+    p, tasks = run_jobs(config,carra_grib,nproc=nproc)
     for t in tasks:
         tg = t.get()
         if tg != 0:

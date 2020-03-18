@@ -4,6 +4,8 @@ import numpy as np
 import numpy.ma as ma
 import matplotlib
 matplotlib.use('Agg')
+from matplotlib import cm
+from matplotlib.colors import ListedColormap
 import matplotlib.pyplot as plt
 import sys
 import argparse
@@ -69,7 +71,7 @@ def read_vars(gribfile,params,step=0):
 
     return ds
 
-def request_vars(params,dt,type='an',step=0,origin='no-ar-ce',database='marsscratch'):
+def request_vars(params,dt,type='an',step=0,origin='no-ar-ce',database=None):
     ds = {}
     vars = copy.deepcopy(params)
     paramlist = [vars[param]['param'] for param in vars]
@@ -204,15 +206,14 @@ def t2m_rh2m(ds):
 
 
 def wind_vel(ds):
-    u = ds['params']['10u']['field']
-    v = ds['params']['10v']['field']
+    u = ds['params']['u10']['field']
+    v = ds['params']['v10']['field']
     lons = ds['misc']['lons']
     lats = ds['misc']['lats']
     proj = ds['misc']['proj']
     dt = ds['misc']['date']
     fcstep = ds['misc']['fcstep']#
     PRJ = pyproj.Proj(proj.proj4_init)
-    mslp = ds['params']['msl']['field']
     wind_speed = np.sqrt(u**2 + v**2)
     ws_levels = [5,10,15,20,25,30,40,50]
     jet = cm.get_cmap('jet',25)
@@ -272,12 +273,12 @@ def from_path(path):
 
 
 
-def from_mars(dt,origin):
+def from_mars(dt,origin,database=None):
     # mslp + precip
     params = {'msl':{'param':151},
               'tp':{'param':228228}
               }
-    ds = request_vars(params,dt,type='fc',origin=origin,step=3)
+    ds = request_vars(params,dt,type='fc',origin=origin,step=3,database=None)
     mslp_precip(ds)
     plt.savefig('mslp_precip_%s_%s_%d.png' % (origin,dt.strftime("%Y%m%d%H"),3))
     plt.close()
@@ -290,8 +291,8 @@ def from_mars(dt,origin):
     plt.close()
 
     # wind
-    params = {'10u': {'param':165},
-              '10v': {'param':166}}
+    params = {'u10': {'param':165},
+              'v10': {'param':166}}
     ds = request_vars(params,dt,type='fc',origin=origin,step=3)
     wind_vel(ds)
     plt.savefig('wind_%s_%s.png' % (origin,dt.strftime("%Y%m%d%H")))
@@ -305,9 +306,11 @@ if __name__=='__main__':
     parser.add_argument('--dtg',type=str,help='yyyymmddhh')
     parser.add_argument('--source',type=str,help='mars or path/to/grib2files/')
     parser.add_argument('--origin',type=str,default='no-ar-ce',help="DOMAIN: no-ar-ce or no-ar-cw")
+    parser.add_argument('--database',type=str,default=None,help="database")
+    
     
     args = parser.parse_args()
     dt = datetime.datetime.strptime(args.dtg,"%Y%m%d%H")
 
     if args.source == 'mars':
-        from_mars(dt,args.origin)
+        from_mars(dt,args.origin,database=args.database)

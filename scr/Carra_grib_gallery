@@ -16,7 +16,7 @@ if [ "$CARRA_GRIB2_ARCHIVE" == "yes" ];then
    module unload grib_api
    module unload metview
    module load python3
-   module load eccodes/2.15.0
+   module load eccodes/2.16.0
    module load metview/5.7.5
    
    if [[ "$DOMAIN" == "CARRA_NE" ]];then
@@ -29,7 +29,7 @@ if [ "$CARRA_GRIB2_ARCHIVE" == "yes" ];then
      exit 1
    fi
    
-   python3 $HM_LIB/util/carra_grib2/tools/batch_plot_fields.py '--dtg' $DTG '--source' mars '--origin' $origin || exit 1
+   python3 $HM_LIB/util/carra_grib2/tools/batch_plot_fields.py '--dtg' $DTG '--source' mars '--origin' $origin --database marsscratch || exit 1
    
    
    [ -d $ARCHIVE_ROOT/gallery ] || $MKDIR $ARCHIVE_ROOT/gallery
