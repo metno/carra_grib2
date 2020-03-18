@@ -197,12 +197,59 @@ def t2m_rh2m(ds):
     CS = ax.contourf(lons,lats,t2m,transform=ccrs.PlateCarree(),colors=t_colors,levels=t_levels)
     plt.colorbar(CS,shrink=0.5,orientation='vertical')
 
-#    CS2 = ax.contour(lons,lats,rh2m,transform=ccrs.PlateCarree(),colors='k')
-
     ax.coastlines('50m')
     ax.gridlines()
 
     plt.title("Analysed T2M \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
+
+
+def wind_vel(ds):
+    u = ds['params']['10u']['field']
+    v = ds['params']['10v']['field']
+    lons = ds['misc']['lons']
+    lats = ds['misc']['lats']
+    proj = ds['misc']['proj']
+    dt = ds['misc']['date']
+    fcstep = ds['misc']['fcstep']#
+    PRJ = pyproj.Proj(proj.proj4_init)
+    mslp = ds['params']['msl']['field']
+    wind_speed = np.sqrt(u**2 + v**2)
+    ws_levels = [5,10,15,20,25,30,40,50]
+    jet = cm.get_cmap('jet',25)
+    newcolors = jet(np.linspace(0, 1, 256))
+    white = np.array([1,1,1,1])
+    lightgrey = np.array([200/256,200/256,200/256,1])
+    darkgrey = np.array([100/256,100/256,100/256,1])
+    newcolors[0:5,:] = white
+    newcolors[5:19, :] = lightgrey
+    newcolors[19:38,:] = darkgrey
+    newcmp = ListedColormap(newcolors)
+    ny,nx = lons.shape
+    sx = slice(0,nx,35)
+    sy = slice(0,ny,35)
+    fig = plt.figure(figsize=[12,9],edgecolor='k')
+    ax = plt.axes(projection=proj)
+    CS = ax.quiver(lons[sy,sx],lats[sy,sx],u[sy,sx],v[sy,sx],
+                   scale=300,
+                   transform=ccrs.PlateCarree(),
+                   zorder=3)
+    CS2 = ax.pcolormesh(lons,lats,wind_speed,
+                      transform=ccrs.PlateCarree(),
+                      cmap=newcmp,
+                      vmin=0,vmax=40,
+                      zorder=1,
+                      alpha=0.9)
+    plt.colorbar(CS2,shrink=0.5,orientation='vertical')
+    ax.coastlines('50m',zorder=2)
+    ax.gridlines()
+    x0,y0 = PRJ(lons[0,0],lats[0,0])
+    x1,y1 = PRJ(lons[-1,-1],lats[-1,-1])
+    N = 10000
+    ax.set_xlim(x0-N,x1+N)
+    ax.set_ylim(y0-N,y1+N)
+    plt.title("Wind velocity \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
+
+
 
 def from_path(path):
     params = {'msl':{'param':151},
@@ -226,6 +273,7 @@ def from_path(path):
 
 
 def from_mars(dt,origin):
+    # mslp + precip
     params = {'msl':{'param':151},
               'tp':{'param':228228}
               }
@@ -234,11 +282,21 @@ def from_mars(dt,origin):
     plt.savefig('mslp_precip_%s_%s_%d.png' % (origin,dt.strftime("%Y%m%d%H"),3))
     plt.close()
 
+    # t2m analysis
     params = {'t2m':{'param':167 }} 
     ds = request_vars(params,dt,type='an',origin=origin,step=0)
     t2m_rh2m(ds)
     plt.savefig('t2m_analysis_%s_%s.png' % (origin,dt.strftime("%Y%m%d%H")))
     plt.close()
+
+    # wind
+    params = {'10u': {'param':165},
+              '10v': {'param':166}}
+    ds = request_vars(params,dt,type='fc',origin=origin,step=3)
+    wind_vel(ds)
+    plt.savefig('wind_%s_%s.png' % (origin,dt.strftime("%Y%m%d%H")))
+    plt.close()
+
 
 
 if __name__=='__main__':
