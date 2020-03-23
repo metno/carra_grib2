@@ -8,8 +8,6 @@ id=$3
 ih=$4
 
 
-echo carrabin=$carrabin
-echo archvive=$ARCHIVE
 
 
 time python3 $carrabin/Select.py $iy$im$id$ih --carrabin $carrabin --archive $ARCHIVE || exit 1 
