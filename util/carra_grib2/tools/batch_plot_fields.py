@@ -278,14 +278,14 @@ def from_mars(dt,origin,database=None):
     params = {'msl':{'param':151},
               'tp':{'param':228228}
               }
-    ds = request_vars(params,dt,type='fc',origin=origin,step=3,database=None)
+    ds = request_vars(params,dt,type='fc',origin=origin,step=3,database=database)
     mslp_precip(ds)
     plt.savefig('mslp_precip_%s_%s_%d.png' % (origin,dt.strftime("%Y%m%d%H"),3))
     plt.close()
 
     # t2m analysis
     params = {'t2m':{'param':167 }} 
-    ds = request_vars(params,dt,type='an',origin=origin,step=0)
+    ds = request_vars(params,dt,type='an',origin=origin,step=0,database=database)
     t2m_rh2m(ds)
     plt.savefig('t2m_analysis_%s_%s.png' % (origin,dt.strftime("%Y%m%d%H")))
     plt.close()
@@ -293,7 +293,7 @@ def from_mars(dt,origin,database=None):
     # wind
     params = {'u10': {'param':165},
               'v10': {'param':166}}
-    ds = request_vars(params,dt,type='fc',origin=origin,step=3)
+    ds = request_vars(params,dt,type='fc',origin=origin,step=3,database=database)
     wind_vel(ds)
     plt.savefig('wind_%s_%s.png' % (origin,dt.strftime("%Y%m%d%H")))
     plt.close()

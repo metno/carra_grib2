@@ -26,7 +26,10 @@ class Request(object):
 
     def write_request(self,f):
         separator = '/'
-        f.write('%s,source=%s,database=%s,\n' % (self.action,self.source,self.database))
+        if self.database:
+            f.write('%s,source=%s,database=%s,\n' % (self.action,self.source,self.database))
+        else:
+            f.write('%s,source=%s,\n' % (self.action,self.source))
         f.write(_line('DATE',self.date))
         f.write(_line('TIME',self.hour))
         f.write(_line('ORIGIN',self.origin.upper()))
@@ -104,9 +107,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     gribfile = args.filename
+ 
+    if args.database == "mars":
+        database = None
+    else:
+        database = args.database
 
     with sys.stdout as rf:
-        req = RequestFromGrib(gribfile,"archive",args.database)
+        req = RequestFromGrib(gribfile,"archive",database)
         req.write_request(rf)
 
 exit()

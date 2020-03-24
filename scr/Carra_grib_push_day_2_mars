@@ -37,8 +37,10 @@ else
   echo "INFO! skip pushing to MARS"
 fi
 
+if [ "$MARS_DATABASE" == "marsscratch" ]; then
+  database=marsscratch
+fi
 
-database=${MARS_DATABSE-marsscratch}
 version=prod # MARS expver of PRECISE data for production
 levtypes="sfc pl ml hl soil"
 types="an fc"
@@ -116,7 +118,11 @@ if [[ "$archive" == "1" ]] ; then
     exit 1
   fi
 
-  time mars -n -t archive.batch || exit 1
+  if [ "$MARS_DATABASE" == "mars" ];then  
+    time mars archive.batch || exit 1
+  else
+    time mars -n -t archive.batch || exit 1
+  fi
 
   [[ $? != 0 ]] && exit -1
   
@@ -131,8 +137,9 @@ if [[ "$archive" == "1" ]] ; then
   while [ "$k" -lt "$max_tries" ];do
     all_good=0
     rm -rf tree.out cost.out
-  
-    mars -n -t << EOF
+
+    if [ "$MARS_DATABASE" == "marsscratch" ];then  
+      mars -n -t << EOF
 list,
       class      = RR,
       origin     = $origin,
@@ -152,6 +159,29 @@ list,
       target     = cost.out,
       output     = table
 EOF
+
+    elif [ "$MARS_DATABASE" == "mars" ];then
+            mars  << EOF
+list,
+      class      = RR,
+      origin     = $origin,
+      stream     = oper,
+      type       = all,
+      DATE       = $date,
+      levtype    = all,
+      expver     = $version,
+      target     = tree.out,
+      hide       = file/length/offset/id/missing/cost/branch/date/hdate/month/year/time,
+      output     = tree
+
+list,
+      class      = RR,
+      hide       =
+file/length/offset/id/missing/cost/branch/param/levtype/levelist/expver/type/class/stream/origin/date/time/step/number/hdate/month/year/time,
+      target     = cost.out,
+      output     = table
+EOF
+    fi
 
     archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
     if [[ "$archived" != "$archived_expected" ]] ; then

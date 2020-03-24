@@ -39,7 +39,7 @@ fi
 archive=0 # do archiving when a full day is complete
 
 
-database=${MARS_DATABSE-marsscratch}
+database=${MARS_DATABASE-marsscratch}
 version=prod # MARS expver of PRECISE data for production
 levtypes="sfc pl ml hl soil"
 types="an fc"

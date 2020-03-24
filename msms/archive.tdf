@@ -101,8 +101,7 @@ loop(HH,0,21,3)
                task Carra_grib_save4later
                    trigger ( Carra_grib_extract == complete )
                task Carra_grib_gallery
-                   complete [ "1" == "1" ]
-                   trigger (Carra_grib_archive == complete )
+                   trigger ( ../../../Hour21/Cycle/Carra_grib_convert/Carra_grib_push_day_2_mars == complete )
 if ( @HH@ == 21 )
                task Carra_grib_push_day_2_mars
                    trigger ( ../../../Hour0/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \
@@ -115,13 +114,6 @@ if ( @HH@ == 21 )
                              ../../../Hour21/Cycle/Carra_grib_convert/Carra_grib_archive == complete )    
 endif
           endfamily Carra_grib_convert
-
-if ( 1 == 2)
-          task Archive_host1
-              trigger (   Carra_grib_convert/Carra_grib_save4later == complete )
-              complete [ $ENV{COMPCENTRE} ne 'ECMWF' or $ENV{ARCHIVE_ECMWF} eq 'no' ]
-              edit SMSTRIES 2
-endif
 
       endfamily # Cycle
 

@@ -319,10 +319,14 @@ FREQ_RESET_GUST=1                       # Reset frequency of max/min gust values
                                         # Set to -1 to get the same frequency _AND_ reset behaviour as for min/max temperature
                                         # See yomxfu.F90 for further information.
 
+# **** CARRA ARCHIVE ****
+CARRA_PARENT_EXP="carra_NE_2" # stream to archive
+CARRA_GRIB2_CONVERT=yes                # Convert grib to grib2 (yes|no)
+CARRA_GRIB2_ARCHIVE=yes                # Push grib2 to MARS    (yes|no)
+MARS_DATABASE="marsscratch"                   # (marsscratch|mars)
+
+
 # **** GRIB ****
-CARRA_GRIB2_CONVERT=yes                 # Convert grib to grib2 (yes|no)
-CARRA_GRIB2_ARCHIVE=yes                 # Push grib2 to MARS    (yes|no)
-MARS_DATABASE=marsscratch               # (marsscratch|???)
 CONVERTFA=yes                           # Conversion of FA file to GRIB/nc (yes|no)
 ARCHIVE_FORMAT=GRIB1                    # Format of archive files (GRIB1|GRIB2|nc). nc format yet only available in climate mode
 MAKEGRIB_VERSION=gribex                 # Use gl with (gribex|grib_api), grib_api required for GRIB2 to work
