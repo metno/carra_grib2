@@ -202,10 +202,10 @@ $par_job{'ZHUGEPAGES'}    = 'export LOADHUGEPAGES="yes"' ;
 
 # Background jobs on ecgate
 @backg_ecgate_list  = ('InitRun','LogProgress','Create_exp',
-                       'Wrapup','SaniDisk','obsmon_sync_stat');
+                       'Wrapup','SaniDisk','obsmon_sync_stat','Carra_grib_listen');
 
-# Serial batch jobs on ccb
-@serial_ccb_list = ('default','Soda_oi_main','Testbed_comp','Makeup_configure',
+# Serial batch jobs on cca
+@serial_cca_list = ('default','Soda_oi_main','Testbed_comp','Makeup_configure',
                     'Boundary_strategy','Prepare_cycle','FirstGuess');
 
 @serial_ccb_aprun_list = ('Listen','Listen4Makegrib',
