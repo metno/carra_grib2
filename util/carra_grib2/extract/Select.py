@@ -107,9 +107,15 @@ def dump_inputfiles(ptasks):
             print(f)
 
 
-def process_tasks(ptasks,ruledir):
+def process_tasks(ptasks,ruledir,ntasks=None):
     pids = {}
     logs = {}
+    if ntasks is None:
+        affinity = max([len(os.sched_getaffinity(0))-1,1])
+        print("Ntasks:", affinity)
+    else:
+        affinity = int(ntasks)
+    print("affinity:",affinity)
     for i in range(len(ptasks)):
         #print(ptasks[i],file=sys.stderr)
         rule = fill_rule(ptasks[i], ruledir, ptasks[i]['outfile']+'.rule')
@@ -117,8 +123,6 @@ def process_tasks(ptasks,ruledir):
         #print(args,file=sys.stderr)
         p = subprocess.Popen(args)
         pids[p.pid] = p
-        affinity = max([len(os.sched_getaffinity(0))-1,1])
-        print("affinity=",affinity,file=sys.stderr)
         while len(pids) >= affinity:
             print("wait for resources",file=sys.stderr)
             time.sleep(1)
@@ -141,6 +145,7 @@ if __name__ == '__main__':
     parser.add_argument('--archive', type=str, required=True, help='path to input files')
     parser.add_argument('--carrabin', type=str, required=True, help='path to installation, util/carra_grib2/extract')
     parser.add_argument('-d','--dump',default=False, action='store_true',help='dump a list of inputfiles')
+    parser.add_argument('-np','--npool',default=None,type=int,help='Number of tasks to be run in parallel')
     args = parser.parse_args()
 
     dt = datetime.datetime.strptime(args.dtg, '%Y%m%d%H')
@@ -153,5 +158,5 @@ if __name__ == '__main__':
     if args.dump:
         dump_inputfiles(ptasks)
     else:
-        process_tasks(ptasks,carrabin)
+        process_tasks(ptasks,carrabin,ntasks=args.npool)
 

@@ -138,7 +138,7 @@ if [[ "$archive" == "1" ]] ; then
     all_good=0
     rm -rf tree.out cost.out
 
-    if [ "$MARS_DATABASE" == "marsscratch" ];then  
+    if [ "$MARS_DATABASE" == "marsscratch" ]; then  
       mars -n -t << EOF
 list,
       class      = RR,

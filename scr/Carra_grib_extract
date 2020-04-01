@@ -34,9 +34,21 @@ out1=$WRK/carra_grib && mkdir -p $out1 # output dir for carra fields selected fr
 out2=$WRK/carra_grib1 && mkdir -p $out2 # output dir for concatenated files
 out3=$WRK/carra_grib2 && mkdir -p $out3 #output dir for concatenated files
 
+NPROC=1
+echo "NPROC=" $NRPOC
+
 files_ok=0 #$?
 if [ "$files_ok" -eq 0 ]; then
-    $carrabin/Select_convert_grib1.bash $iy $im $id $ih || exit 1
+
+  /usr/bin/time python3 $carrabin/Select.py $iy$im$id$ih --carrabin $carrabin --archive $ARCHIVE --npool $NPROC || exit 1
+  mv *grib1* $out1/
+  
+  /usr/bin/time python3 $carrabin/Convert.py --gribdir "$WRK/carra_grib" --cfg "$carrabin/Converters.yml" --npool $NPROC || exit 1
+  
+  /usr/bin/time $carrabin/Convert_sicesnow.ksh || exit 1
+  /usr/bin/time $carrabin/Convert_rad2alb.ksh || exit 1
+  /usr/bin/time $carrabin/Cat_uerra.ksh || exit 1
+
 else
     exit -1
 fi

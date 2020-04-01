@@ -58,13 +58,14 @@ endif
    task InitRun
 
    family Date
-      trigger ( InitRun == complete )
+      trigger ( Date:YMD < ( Postprocessing:YMD + 5 ) and  InitRun == complete )
       repeat date YMD $ENV{StartDate} $ENV{EndDate}
       complete [ $ENV{COMPLETE_FAMILY} =~ /:Date:/ ]
       
       task Carra_grib_listen
       task Carra_grib_fetch
          trigger ( Carra_grib_listen == complete )
+         edit SMSTRIES 2
 
 
       task CollectLogs
@@ -102,6 +103,7 @@ loop(HH,0,21,3)
                    trigger ( Carra_grib_extract == complete )
                task Carra_grib_gallery
                    trigger ( ../../../Hour21/Cycle/Carra_grib_convert/Carra_grib_push_day_2_mars == complete )
+                   edit SMSTRIES 3
 if ( @HH@ == 21 )
                task Carra_grib_push_day_2_mars
                    trigger ( ../../../Hour0/Cycle/Carra_grib_convert/Carra_grib_archive == complete and \

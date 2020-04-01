@@ -4,6 +4,8 @@ set -ax
 
 . header.sh
 
+
+[[ -s $WRK ]] || $MKDIR $WRK
 cd $WRK
 WDIR=`hostname`$$
 Workdir $WDIR
@@ -28,13 +30,21 @@ if [ "$CARRA_GRIB2_ARCHIVE" == "yes" ];then
      echo "Unknown domain $DOMAIN"
      exit 1
    fi
-   
-   python3 $HM_LIB/util/carra_grib2/tools/batch_plot_fields.py '--dtg' $DTG '--source' mars '--origin' $origin --database marsscratch || exit 1
+  
+   if [ "$MARS_DATABASE" == "mars" ];then
+      mdb=""
+   else
+      mdb="--database $MARS_DATABASE"
+   fi
+ 
+   python3 $HM_LIB/util/carra_grib2/tools/batch_plot_fields.py '--dtg' $DTG '--source' mars '--origin' $origin $mdb || exit 1
    
    
    [ -d $ARCHIVE_ROOT/gallery ] || $MKDIR $ARCHIVE_ROOT/gallery
    
    mv *.png $ARCHIVE_ROOT/gallery/ || exit 1
+
+   chmod 444 *.png
 
 else
    echo "Skip gallery"

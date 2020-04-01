@@ -4,7 +4,8 @@ set -ex
 
 . header.sh
 
-module load python3
+#module load python3
+module load ecfs
 
 [[ -s $WRK ]] || $MKDIR $WRK
 cd $WRK
@@ -30,32 +31,58 @@ HM_DATA_PARENT=/scratch/ms/dk/nhx/hm_home/$CARRA_PARENT_EXP/
 ARCHIVE_SCRATCH_PARENT=$HM_DATA_PARENT/archive/
 ARCHIVE_ECFS_PARENT='ec:/nhx/harmonie/'$CARRA_PARENT_EXP
 
-# Prepare files in archive
-#for hh in 00 03 06 09 12 15 18 21; do
-#  python3 $carrabin/Select.py ${date}$hh --carrabin $carrabin --archive $yyyy/$mm/$dd/$hh -d >> infiles
-#done
-
-#python3 $carrabin/prepare_gribfiles.py infiles --scratch_archive_root $ARCHIVE_SCRATCH_PARENT \
-#                                               --ecfs_archive_root $ARCHIVE_ECFS_PARENT
-
-rm -f infiles_*
-for hh in 00 03 06 09; do
-  python3 $carrabin/Select.py ${date}$hh --carrabin $carrabin --archive $yyyy/$mm/$dd/$hh -d >> infiles_1
-done 
-time python3 $carrabin/prepare_gribfiles.py infiles_1 --scratch_archive_root $ARCHIVE_SCRATCH_PARENT \
-                                                 --ecfs_archive_root $ARCHIVE_ECFS_PARENT &
-
-for hh in 12 15 18 21; do
-  python3 $carrabin/Select.py ${date}$hh --carrabin $carrabin --archive $yyyy/$mm/$dd/$hh -d >> infiles_2
-done
-time python3 $carrabin/prepare_gribfiles.py infiles_2 --scratch_archive_root $ARCHIVE_SCRATCH_PARENT \
-                                                 --ecfs_archive_root $ARCHIVE_ECFS_PARENT &
 
 
+
+
+cat << EOF > ecfs_1
+ec:00/fc${date}*grib_fp
+ec:00/fc${date}*grib_sfx
+ec:00/[b,s]a${date}*grib
+ec:00/fc${date}*grib
+ec:03/fc${date}*grib_fp
+ec:03/fc${date}*grib_sfx
+ec:03/[b,s]a${date}*grib
+ec:03/fc${date}*grib
+ec:06/fc${date}*grib_fp
+ec:06/fc${date}*grib_sfx
+ec:06/[b,s]a${date}*grib
+ec:06/fc${date}*grib
+ec:09/fc${date}*grib_fp
+ec:09/fc${date}*grib_sfx
+ec:09/[b,s]a${date}*grib
+ec:09/fc${date}*grib
+EOF
+cat << EOF > ecfs_2
+ec:12/fc${date}*grib_fp
+ec:12/fc${date}*grib_sfx
+ec:12/[b,s]a${date}*grib
+ec:12/fc${date}*grib
+ec:15/fc${date}*grib_fp
+ec:15/fc${date}*grib_sfx
+ec:15/[b,s]a${date}*grib
+ec:15/fc${date}*grib
+ec:18/fc${date}*grib_fp
+ec:18/fc${date}*grib_sfx
+ec:18/[b,s]a${date}*grib
+ec:18/fc${date}*grib
+ec:21/fc${date}*grib_fp
+ec:21/fc${date}*grib_sfx
+ec:21/[b,s]a${date}*grib
+ec:21/fc${date}*grib
+EOF
+
+
+ecd $ARCHIVE_ECFS_PARENT/$yyyy/$mm/$dd
+time ecp -F ecfs_1 "--order=tape" "$WRK/grib_tmp/" &
+time ecp -F ecfs_2 "--order=tape" "$WRK/grib_tmp/" &
 
 wait
 
-
+fetched=$(ls -1 $WRK/grib_tmp/)
+if [ "$fetched" -lt 178 ];then
+  exit 1
+fi
 
 for hh in 00 03 06 09 12 15 18 21; do
   [ -d $ARCHIVE_ROOT/$yyyy/$mm/$dd/$hh/ ] || $MKDIR $ARCHIVE_ROOT/$yyyy/$mm/$dd/$hh/
