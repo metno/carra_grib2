@@ -79,13 +79,29 @@ def prep_files(fileDict):
         elif fileDict[f]['ecfs'] is not None:
             ecfs_files.append(fileDict[f]['ecfs']+'\n')
     if len(ecfs_files) > 0:
+        hours = []
+        for f in fileDict:
+            ecfs_path = os.path.dirname(fileDict[f]['ecfs'])
+            hour = ecfs_path.split('/')[-1]
+            if hour not in hours:
+                hours.append(hour)
+        datepath = "/".join(ecfs_path.split('/')[0:-1])
+        print(datepath)
+            
         with open(ecfs_sources,'w') as srcf:
-            srcf.writelines(ecfs_files)
-        args = ['ecp', '-F', ecfs_sources, grib_tmp_dir+'/']
+            for hour in hours:
+                srcf.writelines("ec:%s/%s\n" % (hour,"fc*grib"))
+                srcf.writelines("ec:%s/%s\n" % (hour,"fc*grib_fp"))
+                srcf.writelines("ec:%s/%s\n" % (hour,"fc*grib_sfx"))
+                srcf.writelines("ec:%s/%s\n" % (hour,"[s,b]a*grib"))
+        args = ['/bin/bash','-c','module load ecfs;','ecd', datepath,';', 'ecp', '-F', ecfs_sources,'--order=tape', grib_tmp_dir+'/']
         print("Fetch from ECFS...")
+        print(" ".join(args))
         tic = time.time()
-        p = subprocess.Popen(args)
-        p.communicate()
+        p = subprocess.Popen(" ".join(args),shell=True,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        out,err = p.communicate()
+        print(out)
+        print(err)
         toc = time.time()
         print("Time spent in ecp[s]: ",toc-tic)
     

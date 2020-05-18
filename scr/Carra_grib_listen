@@ -29,11 +29,11 @@ carrabin=$HM_LIB/util/carra_grib2/extract/ #  location of script and grib_filter
 HM_HOME_PARENT=/home/ms/dk/nhx/hm_home/$CARRA_PARENT_EXP/
 HM_DATA_PARENT=/scratch/ms/dk/nhx/hm_home/$CARRA_PARENT_EXP/
 
-PARENT_DTG=$(head -n1 /home/ms/dk/nhx/hm_home/$CARRA_PARENT_EXP/progress.log | cut -c5-12)
+PARENT_DTG=$(head -n1 /home/ms/dk/nhx/hm_home/$CARRA_PARENT_EXP/progressPP.log | cut -c7-14)
 
 while [ "$date" -ge "$PARENT_DTG" ];do
   sleep 300
-  PARENT_DTG=$(head -n1 /home/ms/dk/nhx/hm_home/$CARRA_PARENT_EXP/progress.log | cut -c5-12)
+  PARENT_DTG=$(head -n1 /home/ms/dk/nhx/hm_home/$CARRA_PARENT_EXP/progressPP.log | cut -c7-14)
 done
 
 trap - 0
