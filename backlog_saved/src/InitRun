@@ -3,6 +3,7 @@
 suite=$2
 base=$1
 
+ssh cca mkdir -p $SCRATCH/backlog_now/
 rsync -av $base cca:$SCRATCH/backlog_now/$suite || exit 1
 rsync -av $base $SCRATCH/backlog_now/$suite || exit 1
 
