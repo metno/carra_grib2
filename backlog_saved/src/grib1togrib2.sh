@@ -51,7 +51,7 @@ for hh in 00 03 06 09 12 15 18 21 ; do
     grib_set "-scentre=enmi,tablesVersion=23,productionStatusOfProcessedData=10,grib2LocalSectionPresent=1,suiteName=$suiteName" $gribfile_out  ${gribfile_out}_final
     rm -f $gribfile_out
     echo "tigge_check..."
-    echo NOT REAlly DOING: tigge_check -u -c  ${gribfile_out}_final || exit 1
+    tigge_check -u -c  ${gribfile_out}_final || exit 1
     echo "make_archive_recuest..."
     python3 $src/make_archive_request.py ${gribfile_out}_final '--database' $database >> archive.batch
     
