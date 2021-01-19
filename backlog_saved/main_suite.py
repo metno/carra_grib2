@@ -86,7 +86,7 @@ def add_suite(suite,cfg):
                      "prog": "archive_save.sh",
                      "args": "$DATE %s $BINDIR" % parent_exp.upper()}
                  },
-               "Trigger": Trigger("Fetch == complete or Fetch:DATE > :DATE"),
+               "Trigger": Trigger("Fetch == complete or Fetch:DATE > :DATE and InitRun == complete"),
                "Repeat": rep
                }
            }
