@@ -1,0 +1,9 @@
+#!/bin/bash
+
+suite=$2
+base=$1
+
+rsync -av $base cca:$SCRATCH/backlog_now/$suite || exit 1
+rsync -av $base $SCRATCH/backlog_now/$suite || exit 1
+
+exit 0
