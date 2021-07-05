@@ -22,84 +22,14 @@ transient sl1 = -999;
 
 transient levtype_str = "";
 
-transient debug = 1; #0;
+transient debug = 0;
 
 switch (param) {
 
-
-   case 228.253: set param2 = 49;      # 10m wind gust speed
-   case 124.253: set param2 = 235017;  # Momentum flux u-component
-   case 125.253: set param2 = 235018;  # Momentum flux v-component
-   case 132.253: set param2 = 235019;  # Latent heat flux through evaporation
-   case 244.253: set param2 = 235071;  # Latent Heat Sublimation
-#   case 245.253: set param2 = 84;      # Water evaporation
-#   case 246.253: set param2 = 85;      # Snow Sublimation
-   case 140.253: set param2 = 47;      # direct normal solar irradiance
-   case 181.253:                       # Rain 
-     switch (timeRangeIndicator) {
-       case 4: set param2 = 235015;    # Rain accumulated
-       default: set param2 = -999;
-     }
-   case 184.253: set param2 = 235072;  # Snow evaporation
-   case 185.253: set param2 = 260645;  # total solid precipitation
-   case 239.253: set param2 = 260651;  # surface roughness of heat
-#   case 161.253: set param2 = 91;      # Hail diagnostics -- Dont include
-   case 162.253: set param2 = 260646;  # U-wind gust
-   case 163.253: set param2 = 260647;  # V-wind gust
-   case  58.253: set param2 = 79;      # vertical integrated cloud ice
-   case  76.253: set param2 = 78;      # vertical integrated cloud liquid water
-   case  51.253: set param2 = 174096;  # specific humidity
-#   case 193.1:                         # Surface soil ice (2 levels)   
-#     set param2 = 260644;
-#     set typeOfLevel = 'depthBelowLand';  
-
-   case  71.253:   # Fog
-     switch (level) { 
-       case 65: set param2 = 260648;  
-       default: set param2 = -999;
-     }
-
-#TEMPORARY   case  92.1:   set param2 = 174098;  # sea ice thickness
-   case 130.253: set param2 = 210;     # net short wave clear sky
-   case 131.253: set param2 = 211;     # net long wave clear sky
-   case 113.253: set param2 = 178;     # TOA net short wave
-   case 114.253: set param2 = 179;     # TOA net long wave
-   case 141.253: set param2 = 260650;  # sice snow depth perhaps 500045
-   case 144.253: set param2 = 260015;  # precip_type
-   case 190.1:   set param2 = 228032;  # Snow albedo
-   case  57.1:   set param2 = 260289;  # Total snow fraction
-
-   case  83.1:    # Surface roughness
-     switch (level) {
-       case 810: set param2 = 173;
-       default: set param2 = -999;
-     }
-
-
-   case 201.253:                       # Graupel
-     switch (indicatorOfTypeOfLevel) {
-       case 200: set param2 = 260001;  # column integrated
-#       case 105: set param2 = 97;      # surface accumulated graupel
-       default: set param2 = -999;
-     }
-
-
-   case 11.1: #set param2 = 260360;  # soil temp
-      switch (indicatorOfTypeOfLevel) {
-        case 105: #   NOT CORRECT! ends up as hl
-          switch (level) {
-             case 731: set param2 = 260649;  # ice temp l1
-#             case 732: set param2 = 36;      # l2
-#             case 733: set param2 = 37;      # l3
-#             case 734: set param2 = 38;      # l4
-#             case 950: set param2 = 98;      # T2M_TEB
-#             case 802: set param2 = 99;      # T2M_ISBA
-#             case 760: set param2 = 100;     # T2M_SEA
-#             case 772: set param2 = 101;     # T2M_WAT
-             default:
-          }
-        default:
-      }
+   case 193.1:                         # Surface soil ice (2 levels)   
+     set param2 = 260644;
+     set typeOfLevel = 'depthBelowLand';  
+     set parType = 'soil_level';
 
    default: set param2 = -999;
 
@@ -235,6 +165,6 @@ if (param2 != -999) {
     print "[param]";
   }
   print "[param] [levtype] [levtype_str] [level]";
-  append"[type].[date].[time].sfc.grib2";
+  append"[type].[date].[time].sol.grib2";
 
 }

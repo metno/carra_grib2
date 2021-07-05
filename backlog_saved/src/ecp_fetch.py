@@ -38,6 +38,7 @@ def fetch_files(ecfsdir,dts):
             date = dt.strftime("%Y%m%d")
             h = dt.strftime("%H")
             srcf.writelines("ec:%s/*.save.%s.%s00.not_yet.grib1\n" % (dpath,date,h))
+            srcf.writelines("ec:%s/fc%s%s+000grib_sfx\n" % (dpath,date,h))
     # command line to execute
     args = ['/bin/bash','-c','module load ecfs;','ecd', ecfsdir,';',
             'ecp', '-F', ecfs_sources,'--order=tape', grib_tmp_dir+'/']

@@ -1,0 +1,5 @@
+Run like 
+python3 main_suite.py --date 19980508 --suite test3 --parent carra_NE_1  
+(add -r for replace) 
+
+

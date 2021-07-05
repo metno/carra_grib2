@@ -32,15 +32,15 @@ switch (param) {
    case 125.253: set param2 = 235018;  # Momentum flux v-component
    case 132.253: set param2 = 235019;  # Latent heat flux through evaporation
    case 244.253: set param2 = 235071;  # Latent Heat Sublimation
-#   case 245.253: set param2 = 84;      # Water evaporation
-#   case 246.253: set param2 = 85;      # Snow Sublimation
+   case 245.253: set param2 = 84;      # Water evaporation
+   case 246.253: set param2 = 85;      # Snow Sublimation
    case 140.253: set param2 = 47;      # direct normal solar irradiance
    case 181.253:                       # Rain 
-     switch (timeRangeIndicator) {
+     switch (indicatorOfTypeOfLevel) {
        case 4: set param2 = 235015;    # Rain accumulated
        default: set param2 = -999;
      }
-   case 184.253: set param2 = 235072;  # Snow evaporation
+   case 184.253: set param2 = 235072;  # Snow
    case 185.253: set param2 = 260645;  # total solid precipitation
    case 239.253: set param2 = 260651;  # surface roughness of heat
 #   case 161.253: set param2 = 91;      # Hail diagnostics -- Dont include
@@ -49,17 +49,11 @@ switch (param) {
    case  58.253: set param2 = 79;      # vertical integrated cloud ice
    case  76.253: set param2 = 78;      # vertical integrated cloud liquid water
    case  51.253: set param2 = 174096;  # specific humidity
-#   case 193.1:                         # Surface soil ice (2 levels)   
-#     set param2 = 260644;
-#     set typeOfLevel = 'depthBelowLand';  
-
-   case  71.253:   # Fog
-     switch (level) { 
-       case 65: set param2 = 260648;  
-       default: set param2 = -999;
-     }
-
-#TEMPORARY   case  92.1:   set param2 = 174098;  # sea ice thickness
+   case 193.1:                         # Surface soil ice (2 levels)   
+     set param2 = -999; #DONT INCLUDE FROM SFX
+     set typeOfLevel = 'depthBelowLand';  
+   case  71.253: set param2 = 260648;  # Fog
+   case  92.1:   set param2 = -999;  # sea ice thickness DONT INCLUDE FROM SFX
    case 130.253: set param2 = 210;     # net short wave clear sky
    case 131.253: set param2 = 211;     # net long wave clear sky
    case 113.253: set param2 = 178;     # TOA net short wave
@@ -79,7 +73,7 @@ switch (param) {
    case 201.253:                       # Graupel
      switch (indicatorOfTypeOfLevel) {
        case 200: set param2 = 260001;  # column integrated
-#       case 105: set param2 = 97;      # surface accumulated graupel
+       case 105: set param2 = 97;      # surface accumulated graupel
        default: set param2 = -999;
      }
 
@@ -88,7 +82,7 @@ switch (param) {
       switch (indicatorOfTypeOfLevel) {
         case 105: #   NOT CORRECT! ends up as hl
           switch (level) {
-             case 731: set param2 = 260649;  # ice temp l1
+             case 731: set param2 = -999;  # ice temp l1
 #             case 732: set param2 = 36;      # l2
 #             case 733: set param2 = 37;      # l3
 #             case 734: set param2 = 38;      # l4
@@ -164,13 +158,9 @@ if (param2 != -999) {
      #print "No special set up for parType=[parType]";
   }
   # some special set up needed for some params..
-  if (param2==260509 || param2==33 || param2==173 || param2==3066 || param2==174008 || param2==260015 || param2==260651){
+  if (param2==260509 || param2==33 || param2==173 || param2==3066 || param2==174008 || param2==260015 || param2==260651 || param2==260289){
     set typeOfFirstFixedSurface = 1; # by default it is 103!
   }
-#  # ES TEST
-#  if (param2==174098){
-#    set typeOfFirstFixedSurface = 1; # Should be 160 but fails in mars
-#  }
 
   # Snow on ice total depth, sea ice surface temperature
   if (param2==260650 || param2==260649){
@@ -183,8 +173,8 @@ if (param2 != -999) {
     set localTablesVersion = 1;
   }
 
-  # Cloud base and cloud top
-  if (param2==260107 || param2==260108){
+  # Cloud base,cloud top, snow albedo
+  if (param2==260107 || param2==260108 || param2==228032){
     set typeOfFirstFixedSurface = 1;
     set typeOfSecondFixedSurface = 255;
   }

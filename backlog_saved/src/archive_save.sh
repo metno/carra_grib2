@@ -80,8 +80,7 @@ list,
 
 list,
       class      = RR,
-      hide       =
-file/length/offset/id/missing/cost/branch/param/levtype/levelist/expver/type/class/stream/origin/date/time/step/number/hdate/month/year/time,
+      hide       = file/length/offset/id/missing/cost/branch/param/levtype/levelist/expver/type/class/stream/origin/date/time/step/number/hdate/month/year/time,
       target     = cost.out,
       output     = table
 EOF
