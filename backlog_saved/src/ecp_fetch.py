@@ -81,5 +81,7 @@ fetch_files(ecfpath,dt)
 content_1 = os.listdir("grib_tmp")
 
 if len(content_1) <= len(content_0):
-    print("No files fetched!! ABORT")
-    exit(1)
+    print(content_0)
+    print("No files fetched!! CAUTION!!")
+    print(content_1)
+    #exit(1)

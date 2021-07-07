@@ -1,0 +1,4 @@
+class=rr,expver=prod,levtype=sfc,origin=no-ar-ce,stream=oper,type=an,param=173/174096/228032/260001/260015/260289/260646/260647/260648/260649/260650/260651/49/78/79
+class=rr,expver=prod,levtype=sol,origin=no-ar-ce,stream=oper,type=an,param=260644,levelist=1/2
+class=rr,expver=prod,levtype=sfc,origin=no-ar-ce,stream=oper,type=fc,step=1/12/15/18/2/21/24/27/3/30/4/5/6/9,param=174096/178/179/210/211/235015/235017/235018/235019/235071/235072/260001/260015/260645/260646/260647/260648/260649/260650/47/49/78/79/84/85/97
+class=rr,expver=prod,levtype=sol,origin=no-ar-ce,stream=oper,type=fc,param=260644,levelist=1/2,step=1/12/15/18/2/21/24/27/3/30/4/5/6/9

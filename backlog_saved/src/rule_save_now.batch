@@ -65,6 +65,7 @@ switch (param) {
    case 113.253: set param2 = 178;     # TOA net short wave
    case 114.253: set param2 = 179;     # TOA net long wave
    case 141.253: set param2 = 260650;  # sice snow depth perhaps 500045
+                 set parType = "sea_ice";
    case 144.253: set param2 = 260015;  # precip_type
    case 190.1:   set param2 = 228032;  # Snow albedo
    case  57.1:   set param2 = 260289;  # Total snow fraction
@@ -89,6 +90,7 @@ switch (param) {
         case 105: #   NOT CORRECT! ends up as hl
           switch (level) {
              case 731: set param2 = 260649;  # ice temp l1
+                       set parType = "sea_ice";
 #             case 732: set param2 = 36;      # l2
 #             case 733: set param2 = 37;      # l3
 #             case 734: set param2 = 38;      # l4
@@ -131,6 +133,11 @@ if (param2 != -999) {
   
   # some special set up for some special groups of params..
   switch (parType) {
+   case "sea_ice":
+     set typeOfFirstFixedSurface = 174;
+     set scaleFactorOfFirstFixedSurface = MISSING;
+     set scaledValueOfFirstFixedSurface = MISSING;
+#     set typeOfSecondFixedSurface = MISSING;
    case "soil_level":
      set paramId = param2;
      set typeOfFirstFixedSurface = 151;
@@ -173,9 +180,13 @@ if (param2 != -999) {
 #  }
 
   # Snow on ice total depth, sea ice surface temperature
-  if (param2==260650 || param2==260649){
-    set typeOfFirstFixedSurface = 174;
-    set typeOfSecondFixedSurface = 255;
+#  if (param2==260650 || param2==260649){
+#    set typeOfFirstFixedSurface = 174;
+#    set typeOfSecondFixedSurface = 255;
+#  }
+
+  if (param2==235072){
+    set bitMapIndicator = 0;
   }
 
   # Local number for some params

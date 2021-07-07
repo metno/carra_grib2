@@ -31,7 +31,9 @@ fi
 
 rm -f archive.batch
 
-for hh in 00 03 06 09 12 15 18 21 ; do
+#for hh in 00 03 06 09 12 15 18 21 ; do
+for hh in 03 ; do
+
   for typ in an fc ; do
   
     gribfile_in_sfx=grib_tmp/fc$dtg${hh}+000grib_sfx
@@ -42,7 +44,8 @@ for hh in 00 03 06 09 12 15 18 21 ; do
     ### convert units ###
     # call python script which replace field (unit e.g. ; not grib1-grib2 here)
     echo "Convert..."
-    python3 $src/converters.py  $gribfile_in
+    python3 $src/converters.py  $gribfile_in tmp.grib && mv tmp.grib $gribfile_in || exit 1
+    python3 $src/converters.py  $gribfile_in_sfx tmp_sfx.grib && mv tmp_sfx.grib $gribfile_in_sfx || exit 1
     
     
     ### gribfilter ###
@@ -63,9 +66,9 @@ for hh in 00 03 06 09 12 15 18 21 ; do
     echo "grib_set..." 
     for outfile in $gribfile_out $gribfile_out_sol; do
       grib_set "-scentre=enmi,tablesVersion=23,productionStatusOfProcessedData=10,grib2LocalSectionPresent=1,suiteName=$suiteName" $outfile ${outfile}_final
-      rm -f $outfile
+      #rm -f $outfile
       echo "tigge_check..."
-      #TEST tigge_check -u -c  ${outfile}_final || exit 1
+      tigge_check -u -c  ${outfile}_final > ${outfile}_tigge_check_dump #|| exit 1
       echo "make_archive_request..."
       python3 $src/make_archive_request.py ${outfile}_final '--database' $database >> archive.batch
     done
