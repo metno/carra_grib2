@@ -31,8 +31,8 @@ fi
 
 rm -f archive.batch
 
-#for hh in 00 03 06 09 12 15 18 21 ; do
-for hh in 03 ; do
+for hh in 00 03 06 09 12 15 18 21 ; do
+#for hh in 03 ; do
 
   for typ in an fc ; do
   

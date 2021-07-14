@@ -1,0 +1,122 @@
+[
+    {
+        "carra_NE_4": {
+            "startDate": "19900901",
+            "endDate": "19920831"
+        }
+    },
+    {
+        "carra_NE_5": {
+            "startDate": "19920901",
+            "endDate": "19940831"
+        }
+    },
+    {
+        "carra_NE_6": {
+            "startDate": "19940901",
+            "endDate": "19970731"
+        }
+    },
+    {
+        "carra_NE_1": {
+            "startDate": "19970801",
+            "endDate": "19980202"
+        }
+    },
+    {
+        "carra_NE_1r": {
+            "startDate": "19980203",
+            "endDate": "19980214"
+        }
+    },
+    {
+        "carra_NE_1": {
+            "startDate": "19980215",
+            "endDate": "20060831"
+        }
+    },
+    {
+        "carra_NE_2": {
+            "startDate": "20060901",
+            "endDate": "20140831"
+        }
+    },
+    {
+        "carra_NE_3": {
+            "startDate": "20140901",
+            "endDate": "20210331"
+        }
+    },
+    {
+        "carra_IGB_4": {
+            "startDate": "19900901",
+            "endDate": "19920831"
+        }
+    },
+    {
+        "carra_IGB_5": {
+            "startDate": "19920901",
+            "endDate": "19940831"
+        }
+    },
+    {
+        "carra_IGB_6": {
+            "startDate": "19940901",
+            "endDate": "19970731"
+        }
+    },
+    {
+        "carra_IGB_1": {
+            "startDate": "19970801",
+            "endDate": "19970802"
+        }
+    },
+    {
+        "carra_IGB_1r": {
+            "startDate": "19970803",
+            "endDate": "19970831"
+        }
+    },
+    {
+        "carra_IGB_1": {
+            "startDate": "19970801",
+            "endDate": "20020831"
+        }
+    },
+    {
+        "carra_IGB_1B": {
+            "startDate": "20020901",
+            "endDate": "20060831"
+        }
+    },
+    {
+        "carra_IGB_2": {
+            "startDate": "20060901",
+            "endDate": "20081231"
+        }
+    },
+    {
+        "carra_IGB_2r": {
+            "startDate": "20090101",
+            "endDate": "20090331"
+        }
+    },
+    {
+        "carra_IGB_2": {
+            "startDate": "20090401",
+            "endDate": "20100831"
+        }
+    },
+    {
+        "carra_IGB_2B": {
+            "startDate": "20100901",
+            "endDate": "20140831"
+        }
+    },
+    {
+        "carra_IGB_3": {
+            "startDate": "20140901",
+            "endDate": "20210331"
+        }
+    }
+]

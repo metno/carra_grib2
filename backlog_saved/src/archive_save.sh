@@ -5,6 +5,8 @@ module switch eccodes/2.21.0
 #module load python3/3.6.8-01
 module load python3
 
+set -x
+
 dtg=$1
 parent_exp=$2
 src=$3
@@ -85,7 +87,7 @@ list,
       output     = table
 EOF
 fi
-
+  archived_expected="1286"
   archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
   if [[ "$archived" != "$archived_expected" ]] ; then
     echo "$date: Different number of fields archived than expected: $archived ($archived_expected)! try $k"
@@ -94,7 +96,7 @@ fi
   fi
 
 
-  tree_ref=carra-${suiteName}-save.tree.reference.out #$bin/carra-${suiteName}-${fclen}.tree.reference.out
+  tree_ref=$src/carra-${suiteName}-save.tree.reference.out #$bin/carra-${suiteName}-${fclen}.tree.reference.out
   if [[ $(diff tree.out ${tree_ref}) ]] ; then
     echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs! try $k"
   else

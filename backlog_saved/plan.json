@@ -1,0 +1,20 @@
+[
+    {
+        "carra_NE_1": {
+            "startDate": 19980101,
+            "endDate": 19980202
+        }
+    },
+    {
+        "carra_NE_1r": {
+            "startDate": 19980203,
+            "endDate": 19980214
+        }
+    },
+    {
+        "carra_NE_1": {
+            "startDate": 19980215,
+            "endDate": 19981231
+        }
+    }
+]

@@ -4,7 +4,7 @@
 ########################################################################
 #
 # - it contains rules for grib_filter tool
-# - variables @type@ (=an/fc), @version@ (=8/9) and @outdir@ 
+# - variables fc (=an/fc), @version@ (=8/9) and @outdir@ 
 #   (output directory) must be parsed before running it
 #
 # How to run it:
@@ -33,14 +33,14 @@ switch (param) {
    case 132.253: set param2 = 235019;  # Latent heat flux through evaporation
    case 244.253: set param2 = 235071;  # Latent Heat Sublimation
 #   case 245.253: set param2 = 84;      # Water evaporation
-   case 246.253: set param2 = 235072;      # Snow Sublimation
+#   case 246.253: set param2 = 85;      # Snow Sublimation
    case 140.253: set param2 = 47;      # direct normal solar irradiance
    case 181.253:                       # Rain 
      switch (timeRangeIndicator) {
        case 4: set param2 = 235015;    # Rain accumulated
        default: set param2 = -999;
      }
-#   case 184.253: set param2 = -999;  # Snow 
+   case 184.253: set param2 = 235072;  # Snow evaporation
    case 185.253: set param2 = 260645;  # total solid precipitation
    case 239.253: set param2 = 260651;  # surface roughness of heat
 #   case 161.253: set param2 = 91;      # Hail diagnostics -- Dont include
@@ -189,6 +189,7 @@ if (param2 != -999) {
     set bitMapIndicator = 0;
   }
 
+
   # Local number for some params
   if (param2==260651){
     set localTablesVersion = 1;
@@ -209,7 +210,7 @@ if (param2 != -999) {
   set productionStatusOfProcessedData = 10; #@version@;
   set tablesVersion = 23;
   set grib2LocalSectionPresent = 1;
-  set type = "@type@";
+  set type = "fc";
 #  set origin = "enmi-haro-cae";
 #  set class = "RR";
 
@@ -228,7 +229,7 @@ if (param2 != -999) {
   ################# major end #####################
   # some checks..
   assert(stream is "oper");
-  assert(type is "@type@");
+  assert(type is "fc");
 #  assert(is_uerra==1);
 #  assert(is_precise==1);
   assert(productionStatusOfProcessedData==10); #@version@);

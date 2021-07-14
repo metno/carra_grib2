@@ -56,8 +56,9 @@ def cca_task(name,home):
 def add_suite(suite,cfg):
     
     ymd = "%Y%m%d"
-    rep = RepeatDate("DATE",int(dt.strftime(ymd)),int(dtend.strftime(ymd)))
-    
+    rep = RepeatDate("DATE",int(cfg["date"].strftime(ymd)),int(cfg["enddate"].strftime(ymd)))
+    home = cfg["home"]    
+    parent_exp = cfg["parent"]
     fams = {"Fetch":
              {"Trigger": Trigger("InitRun == complete"),
               "Repeat": rep,
@@ -93,7 +94,7 @@ def add_suite(suite,cfg):
     
     initrun = {"Task": Task("InitRun"),
                     "prog": "InitRun",
-                    "args": "%s %s " % (expdir, suite)
+                    "args": "%s %s " % (cfg["expdir"], suite)
                       }
 
     with Defs() as defs:
@@ -114,6 +115,7 @@ def add_suite(suite,cfg):
         #print(defs.check_job_creation())
         return defs
 
+
 def assume(arg,guess,comment="var"):
     if arg is not None:
         var = arg
@@ -123,39 +125,23 @@ def assume(arg,guess,comment="var"):
     return var
 
 
-if __name__ == "__main__":
-    
-    import sys
-    import argparse
+def main(args):
 
-    parser = argparse.ArgumentParser(description='set up backlog archiving suite')
-    parser.add_argument("--date", required=True, type=str, help="first date of archiving [yyyymmdd]")
-    parser.add_argument("--enddate", type=str, default=None, help="last date of archiving [yyyymmdd]")
-    parser.add_argument("--suite", required=True, type=str, default=None, help="name of suite")
-    parser.add_argument("--parent", required=True, type=str, default=None, help="parent experiement")
-    parser.add_argument("-r", "--replace", action='store_true', help="replace suite")
-    parser.add_argument("--port", type=int, default=None, help="port of ecflow_server")
-    parser.add_argument("--host", type=str, default=None, help="host of ecflow_server")
-    parser.add_argument("--compute_server", type=str, default=None, help="which system to run jobsin")
-    
-    args = parser.parse_args()
- 
-
-    dt = datetime.datetime.strptime(args.date, "%Y%m%d")
-    enddate = assume(args.enddate,args.date, "ENDDATE")
+    dt = datetime.datetime.strptime(args["date"], "%Y%m%d")
+    enddate = assume(args["enddate"],args["date"], "ENDDATE")
     dtend = datetime.datetime.strptime(enddate, "%Y%m%d")
 
-    if not args.replace:
+    if not args["replace"]:
         action = "add"
     else:
         action = "replace"
 
-    suite = args.suite
-    parent_exp = args.parent
+    suite = args["suite"]
+    parent_exp = args["parent"]
 
-    port = assume(args.port, 1500 + os.getuid(), "ECF_PORT")
-    host = assume(args.host, "ecgate", "ECF_HOST")   
-    hpc = assume(args.compute_server, "cca", "compute server (where jobs are submitted)")
+    port = assume(args["port"], 1500 + os.getuid(), "ECF_PORT")
+    host = assume(args["host"], "ecgate", "ECF_HOST")   
+    hpc = assume(args["compute_server"], "cca", "compute server (where jobs are submitted)")
 
     scratch = os.path.join(os.getenv("SCRATCH"),"backlog_now/%s/" % suite)
     print("jobs run under %s:%s" % (hpc,scratch))
@@ -169,7 +155,10 @@ if __name__ == "__main__":
     cfg = {"home": home,
            "scratch":scratch,
            "bindir":bindir,
-           "expdir":expdir}
+           "expdir":expdir,
+           "date":dt,
+           "enddate":dtend,
+           "parent":parent_exp}
     
     
     defs = add_suite(suite,cfg)
@@ -193,4 +182,24 @@ if __name__ == "__main__":
 
     print("%s %s in [%s]" % (action, suite,", ".join(ci.suites())))
  
+ 
+
+
+if __name__ == "__main__":
     
+    import sys
+    import argparse
+
+    parser = argparse.ArgumentParser(description='set up backlog archiving suite')
+    parser.add_argument("--date", required=True, type=str, help="first date of archiving [yyyymmdd]")
+    parser.add_argument("--enddate", type=str, default=None, help="last date of archiving [yyyymmdd]")
+    parser.add_argument("--suite", required=True, type=str, default=None, help="name of suite")
+    parser.add_argument("--parent", required=True, type=str, default=None, help="parent experiement")
+    parser.add_argument("-r", "--replace", action='store_true', help="replace suite")
+    parser.add_argument("--port", type=int, default=None, help="port of ecflow_server")
+    parser.add_argument("--host", type=str, default=None, help="host of ecflow_server")
+    parser.add_argument("--compute_server", type=str, default=None, help="which system to run jobsin")
+    
+    args = vars(parser.parse_args())
+ 
+    main(args)
