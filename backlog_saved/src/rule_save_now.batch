@@ -27,7 +27,11 @@ transient debug = 1; #0;
 switch (param) {
 
 
-   case 228.253: set param2 = 49;      # 10m wind gust speed
+   case 228.253: 
+     set param2 = 49;      # 10m wind gust speed
+     if ("@type@" is "an"){
+       set param2 = -999;
+     }
    case 124.253: set param2 = 235017;  # Momentum flux u-component
    case 125.253: set param2 = 235018;  # Momentum flux v-component
    case 132.253: set param2 = 235019;  # Latent heat flux through evaporation
@@ -44,8 +48,16 @@ switch (param) {
    case 185.253: set param2 = 260645;  # total solid precipitation
    case 239.253: set param2 = 260651;  # surface roughness of heat
 #   case 161.253: set param2 = 91;      # Hail diagnostics -- Dont include
-   case 162.253: set param2 = 260646;  # U-wind gust
-   case 163.253: set param2 = 260647;  # V-wind gust
+   case 162.253: 
+     set param2 = 260646;  # U-wind gust
+     if ("@type@" is "an"){
+       set param2 = -999;
+     }
+   case 163.253: 
+     set param2 = 260647;  # V-wind gust
+     if ("@type@" is "an"){
+       set param2 = -999;
+     }
    case  58.253: set param2 = 79;      # vertical integrated cloud ice
    case  76.253: set param2 = 78;      # vertical integrated cloud liquid water
    case  51.253: set param2 = 174096;  # specific humidity
@@ -66,7 +78,11 @@ switch (param) {
    case 114.253: set param2 = 179;     # TOA net long wave
    case 141.253: set param2 = 260650;  # sice snow depth perhaps 500045
                  set parType = "sea_ice";
-   case 144.253: set param2 = 260015;  # precip_type
+   case 144.253: 
+     set param2 = 260015;  # precip_type
+     if ("@type@" is "an"){
+       set param2 = -999;
+     }
    case 190.1:   set param2 = 228032;  # Snow albedo
    case  57.1:   set param2 = 260289;  # Total snow fraction
 
@@ -185,9 +201,9 @@ if (param2 != -999) {
 #    set typeOfSecondFixedSurface = 255;
 #  }
 
-  if (param2==235072){
-    set bitMapIndicator = 0;
-  }
+#  if (param2==235072){
+#    set bitMapIndicator = 0;
+#  }
 
   # Local number for some params
   if (param2==260651){

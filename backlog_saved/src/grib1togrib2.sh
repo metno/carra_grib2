@@ -17,16 +17,17 @@ version=prod
 
 database=marsscratch #mars
 MARS_DATABASE=$database
-DOMAIN=$(echo $parent_exp | cut -c1-8)  #   CARRA_NE
+#DOMAIN=$(echo $parent_exp | cut -c1-8)  #   CARRA_NE
 
-
-
-if [[ "$DOMAIN" == "CARRA_NE" ]]; then
+if [[ $parent_exp == *"NE"* ]]; then
    origin="NO-AR-CE"
    suiteName="no-ar-ce"
-elif [[ "$DOMAIN" == "CARRA_SW" || "$DOMAIN" == "IGB" ]];then
+elif [[ $parent_exp == *"IGB"* ]];then
    origin="NO-AR-CW"
    suiteName="no-ar-cw"
+else
+   echo "Unrecognized parent_exp: " $parent_exp
+   exit 1 
 fi
 
 rm -f archive.batch
@@ -41,6 +42,7 @@ for hh in 00 03 06 09 12 15 18 21 ; do
     gribfile_out=$typ.$dtg.${hh}00.sfc.grib2
     gribfile_out_sol=$typ.$dtg.${hh}00.sol.grib2
 
+   
     ### convert units ###
     # call python script which replace field (unit e.g. ; not grib1-grib2 here)
     echo "Convert..."
@@ -57,8 +59,16 @@ for hh in 00 03 06 09 12 15 18 21 ; do
 
 
     grib_filter rule.batch $gribfile_in
-    if [[ "$typ" == "an" ]]; then
+    if [[ "$typ" == "an" ]]; then  #Backup analysis file, and add extra parameters from sfx file
       grib_filter rule_sfx.batch $gribfile_in_sfx  # Add extra parameters from sfx file
+
+      #Backup analysis file
+      if [[ "$suiteName" == "no-ar-cw" ]]; then 
+        cp $gribfile_in /scratch/ms/no/fa0e/carra_backup/IGB/${dtg:0:4}/
+      else 
+        cp $gribfile_in /scratch/ms/no/fa0e/carra_backup/NE/${dtg:0:4}/
+      fi
+
     fi
     grib_filter rule_sol.batch $gribfile_in
 

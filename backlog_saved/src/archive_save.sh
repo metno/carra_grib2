@@ -20,14 +20,17 @@ version=prod
 
 database=marsscratch #mars
 MARS_DATABASE=$database
-DOMAIN=$(echo $parent_exp | cut -c1-8)
+#DOMAIN=$(echo $parent_exp | cut -c1-8)
 
-if [[ "$DOMAIN" == "CARRA_NE" ]]; then
+if [[ $parent_exp == *"NE"* ]]; then
    origin="NO-AR-CE"
    suiteName="no-ar-ce"
-elif [[ "$DOMAIN" == "CARRA_SW" || "$DOMAIN" == "IGB" ]];then
+elif [[ $parent_exp == *"IGB"* ]];then
    origin="NO-AR-CW"
    suiteName="no-ar-cw"
+else
+   echo "Unrecognized parent_exp: " $parent_exp
+   exit 1
 fi
 
 # mars call
@@ -87,7 +90,7 @@ list,
       output     = table
 EOF
 fi
-  archived_expected="1286"
+  archived_expected="1254"
   archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
   if [[ "$archived" != "$archived_expected" ]] ; then
     echo "$date: Different number of fields archived than expected: $archived ($archived_expected)! try $k"
