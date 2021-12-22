@@ -71,7 +71,7 @@ switch (param) {
        default: set param2 = -999;
      }
 
-#TEMPORARY   case  92.1:   set param2 = 174098;  # sea ice thickness
+#ES TEMPORARY   case  92.1:   set param2 = 174098;  # sea ice thickness
    case 130.253: set param2 = 210;     # net short wave clear sky
    case 131.253: set param2 = 211;     # net long wave clear sky
    case 113.253: set param2 = 178;     # TOA net short wave
@@ -196,10 +196,14 @@ if (param2 != -999) {
 #  }
 
   # Snow on ice total depth, sea ice surface temperature
-#  if (param2==260650 || param2==260649){
+  if (param2==260650 || param2==260649){
+    set scaleFactorOfFirstFixedSurface = MISSING;
+    set scaledValueOfFirstFixedSurface = MISSING;
+
 #    set typeOfFirstFixedSurface = 174;
 #    set typeOfSecondFixedSurface = 255;
-#  }
+  }
+
 
 #  if (param2==235072){
 #    set bitMapIndicator = 0;

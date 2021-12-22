@@ -73,6 +73,9 @@ print(yyyy,mm,dd)
 dt = [datetime.datetime(yyyy,mm,dd,i*3) for i in range(8)]
 ecfpath = "/nhx/harmonie/%s/" % sys.argv[1]
 
+grib_tmp_dir = "grib_tmp"
+if not os.path.isdir(grib_tmp_dir):
+    os.mkdir(grib_tmp_dir)
 if "grib_tmp" in os.listdir():
     content_0 = os.listdir("grib_tmp")
 
