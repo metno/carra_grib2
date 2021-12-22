@@ -71,7 +71,7 @@ switch (param) {
        default: set param2 = -999;
      }
 
-#ES TEMPORARY   case  92.1:   set param2 = 174098;  # sea ice thickness
+#TEMPORARY   case  92.1:   set param2 = 174098;  # sea ice thickness
    case 130.253: set param2 = 210;     # net short wave clear sky
    case 131.253: set param2 = 211;     # net long wave clear sky
    case 113.253: set param2 = 178;     # TOA net short wave

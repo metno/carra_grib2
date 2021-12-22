@@ -1,8 +1,8 @@
 #!/bin/bash
 
 
-module switch eccodes/2.21.0
-#module switch eccodes/2.24.1
+module unload eccodes
+module load eccodes/2.21.0
 #module load python3/3.6.8-01
 module load python3
 
