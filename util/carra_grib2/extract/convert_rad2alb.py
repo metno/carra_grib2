@@ -15,23 +15,15 @@ infile_alb = sys.argv[2]
 infile_rad = sys.argv[1]
 outfile = sys.argv[3]
 
-
 print("albedo file:",infile_alb)
 print("radiation file:",infile_rad)
 print("output file:",outfile)
 
-
 gfin_alb = open(infile_alb)
-#gfin_alb = ecc.GribFile(infile_alb)
 gfin_rad = open(infile_rad)
-#gfin_rad = ecc.GribFile(infile_rad)
-
-#print(len(gfin_rad))
 
 stepattern = re.compile('_(\d+).grib1')
 m = re.search(stepattern,infile_rad)
-
-#print(m.group(1))
 
 if int(m.group(1)) <= 1:
   deacc = False
@@ -43,7 +35,6 @@ else:
     prev = "_%03d.grib1" % (int(m.group(1)) - 3)
   infile_rad_prev = stepattern.sub(prev,infile_rad)
   gfin_rad_prev = open(infile_rad_prev)
-
 
 
 ikey = 'indicatorOfParameter'
@@ -94,5 +85,4 @@ albedo = np.where(albedo<0,undef,albedo)
 with open(outfile,'wb') as test:
     ecc.codes_set_values(msg2, albedo)
     ecc.codes_write(msg2, test)
-
 
