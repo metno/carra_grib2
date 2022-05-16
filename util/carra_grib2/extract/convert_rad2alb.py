@@ -21,10 +21,12 @@ print("radiation file:",infile_rad)
 print("output file:",outfile)
 
 
-gfin_alb = ecc.GribFile(infile_alb)
-gfin_rad = ecc.GribFile(infile_rad)
+gfin_alb = open(infile_alb)
+#gfin_alb = ecc.GribFile(infile_alb)
+gfin_rad = open(infile_rad)
+#gfin_rad = ecc.GribFile(infile_rad)
 
-print(len(gfin_rad))
+#print(len(gfin_rad))
 
 stepattern = re.compile('_(\d+).grib1')
 m = re.search(stepattern,infile_rad)
@@ -40,37 +42,46 @@ else:
   else:
     prev = "_%03d.grib1" % (int(m.group(1)) - 3)
   infile_rad_prev = stepattern.sub(prev,infile_rad)
-  gfin_rad_prev = ecc.GribFile(infile_rad_prev)
+  gfin_rad_prev = open(infile_rad_prev)
 
 
 
 ikey = 'indicatorOfParameter'
 
-for i in range(len(gfin_alb)):
-    msg = ecc.GribMessage(gfin_alb)
-    if (msg[ikey] == 84):
-        msg2 = ecc.GribMessage(clone=msg)
+while True:
+    msg = ecc.codes_grib_new_from_file(gfin_alb)
+    if msg is None:
+        break
+    key = ecc.codes_get_long(msg, ikey)
+    if (key == 84):
+        msg2 = ecc.codes_clone(msg)
         break
 
-for i in range(len(gfin_rad)):
-    msg = ecc.GribMessage(gfin_rad)
-    if (msg[ikey] == 111):
-        ssr = msg['values']
-    elif (msg[ikey] == 117):
-        ssrd = msg['values'] 
+while True:
+    msg = ecc.codes_grib_new_from_file(gfin_rad)
+    if msg is None:
+        break
+    key = ecc.codes_get_long(msg, ikey)
+    if (key == 111):
+        ssr = ecc.codes_get_values(msg)
+    elif (key == 117):
+        ssrd = ecc.codes_get_values(msg) 
 
 if deacc:
-   for i in range(len(gfin_rad_prev)):
-        msg = ecc.GribMessage(gfin_rad_prev)
-        if (msg[ikey] == 111):
-            ssr_prev = msg['values']
-        elif (msg[ikey] == 117):
-            ssrd_prev = msg['values']
+   while True:
+        msg = ecc.codes_grib_new_from_file(gfin_rad_prev)
+        if msg is None:
+            break
+        key = ecc.codes_get(msg, ikey)
+        if (key == 111):
+            ssr_prev = ecc.codes_get_values(msg)
+        elif (ecc.codes_get(msg, ikey) == 117):
+            ssrd_prev = ecc.codes_get_values(msg)
    ssrd = ssrd - ssrd_prev
    ssr = ssr - ssr_prev
 
 
-undef = msg2['missingValue']
+undef = ecc.codes_get(msg2, 'missingValue')
 
 with np.errstate(divide='ignore', invalid='ignore'):
     al = 1 - np.where(ssrd < 10,np.nan,ssr/ssrd)
@@ -81,7 +92,7 @@ albedo = np.where(albedo<0,undef,albedo)
 
 
 with open(outfile,'wb') as test:
-    msg2['values'] = albedo
-    msg2.write(test)
+    ecc.codes_set_values(msg2, albedo)
+    ecc.codes_write(msg2, test)
 
 

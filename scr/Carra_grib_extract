@@ -12,8 +12,8 @@ export GRIB_DEFINITION_PATH=""
 module swap gcc/6.3.0
 module unload grib_api
 module unload eccodes
-module load eccodes/2.16.0
-module load python3/3.6.8-01
+module load eccodes/2.25.0
+module load python3/3.8.8-01
 
 [[ -s $WRK ]] || $MKDIR $WRK
 cd $WRK
@@ -54,7 +54,7 @@ else
 fi
 
 cd $WRK
-rm -rf $WDIR
+#rm -rf $WDIR
 
 trap - 0
 exit

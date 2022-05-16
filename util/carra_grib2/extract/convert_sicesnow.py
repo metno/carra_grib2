@@ -24,31 +24,32 @@ swe_per_level = []
 sr_per_level  = []
 out_message   = None
 
-with ecc.GribFile(infile_raw_snow) as gfin_raw_snow:
-  num_messages = len(gfin_raw_snow)
-  for _ in range(num_messages):
-    grib_message = ecc.GribMessage(gfin_raw_snow)
-
-    parameter  = grib_message['indicatorOfParameter']
-    level_type = grib_message['indicatorOfTypeOfLevel']
-    level      = grib_message['level']
-    print(parameter,level_type,level)
-    if parameter == 13 and level_type == 'sfc' and level == 721:
-      out_message = ecc.GribMessage(clone=grib_message)
-
-    if parameter == 13 and level_type == 'sfc' and level in [721, 722, 723]:
-      print('Found SWE, layer {}'.format(level))
-      raw_data = grib_message['values']
-      masked_data = ma.masked_where(raw_data == grib_message['missingValue'], raw_data)
-
-      swe_per_level.append(masked_data)
-
-    if parameter == 191 and level_type == 'sfc' and level in [721, 722, 723]:
-      print('Found SR, layer {}'.format(level))
-      raw_data = grib_message['values']
-      masked_data = ma.masked_where(raw_data == grib_message['missingValue'], raw_data)
-
-      sr_per_level.append(masked_data)
+with open(infile_raw_snow) as gfin_raw_snow:
+    while True:
+        grib_message = ecc.codes_grib_new_from_file(gfin_raw_snow)
+        if  grib_message is None:
+            break
+        parameter  = ecc.codes_get(grib_message, 'indicatorOfParameter')
+        level_type = ecc.codes_get(grib_message, 'indicatorOfTypeOfLevel')
+        level      = ecc.codes_get(grib_message, 'level')
+        print(parameter,level_type,level)
+        if parameter == 13 and level_type == 'sfc' and level == 721:
+            out_message = ecc.codes_clone(grib_message)
+  
+        if parameter == 13 and level_type == 'sfc' and level in [721, 722, 723]:
+            print('Found SWE, layer {}'.format(level))
+            raw_data = ecc.codes_get_values(grib_message)
+            missval = ecc.codes_get(grib_message, 'missingValue')
+            masked_data = ma.masked_where(raw_data == missval, raw_data)
+   
+            swe_per_level.append(masked_data)
+        if parameter == 191 and level_type == 'sfc' and level in [721, 722, 723]:
+            print('Found SR, layer {}'.format(level))
+            raw_data = ecc.codes_get_values(grib_message)
+            masked_data = ma.masked_where(raw_data == missval, raw_data)
+  
+            sr_per_level.append(masked_data)
+  
 
 print('Snow depth calculation...')
 
@@ -60,11 +61,11 @@ snow_depth = ma.sum(swe_all_levels/sr_all_levels, axis=0)
 print('Generating output GRIB')
 
 if out_message is not None:
-  missing_value = out_message['missingValue']
-  out_message['values'] = snow_depth.filled(fill_value=missing_value)
-  out_message['level']  = 721 # FIXME: correct level?
-  out_message['indicatorOfParameter']  = 141 # FIXME: correct parameter id?
+  missing_value = missval
+  ecc.codes_set_values(out_message, snow_depth.filled(fill_value=missing_value))
+  ecc.codes_set(out_message, "level", 721)
+  ecc.codes_set(out_message, "indicatorOfParameter", 141)
 
   with open(outfile_snow_depth, 'wb') as out_file:
-    out_message.write(out_file)
+    ecc.codes_write(out_message, out_file)
 
