@@ -54,7 +54,7 @@ else
 fi
 
 cd $WRK
-#rm -rf $WDIR
+rm -rf $WDIR
 
 trap - 0
 exit
