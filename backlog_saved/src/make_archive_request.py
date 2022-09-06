@@ -60,26 +60,29 @@ class RequestFromGrib(Request):
         params = []
         levels = []
         steps = []
-        with ecc.GribFile(gribfile) as gf:
-            nfields = len(gf)
-            for i in range(len(gf)):
-                msg = ecc.GribMessage(gf)
-                params.append(msg['param'])
-                levels.append(msg['level'])
-                steps.append(msg['step'])
+        nfields = 0
+        i=0
+        with open(gribfile) as gf:
+            while True: 
+                msg = ecc.codes_grib_new_from_file(gf)
+                params.append(ecc.codes_get(msg, 'param')
+                levels.append(ecc.codes_get(msg, 'level')
+                steps.append(ecc.codes_get(msg, 'step')
                 if i == 1:
-                    self.date = str(msg["dataDate"])
-                    self.hour = "%04d" % int(msg["dataTime"])
-
-                    if str(msg['suiteName']) == '1':
+                    self.date = str(ecc.codes_get(msg, "dataDate")
+                    self.hour = "%04d" % int(ecc.codes_get(msg, "dataTime")
+                    suitename = str(ecc.codes_get(msg, 'suiteName'))
+                    if suitename == '1':
                         self.origin = "no-ar-ce"
-                    elif str(msg['suiteName']) == '2':
+                    elif suitename == '2':
                         self.origin = "no-ar-cw"
-                    elif str(msg['suiteName']) == '3':
+                    elif suitname == '3':
                         self.origin = "no-ar-pa"
                     else:
                         print("unknown origin/suiteName")
                         exit(1)
+                i += 1
+                nfields += 1
         param = list(set(params))
         param.sort()
         self.param = param

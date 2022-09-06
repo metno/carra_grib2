@@ -9,19 +9,19 @@ import argparse
 
 
 def get_field(fnam):
-    f = ecc.GribFile(fnam)
+    f = open(fnam)
     nfound = 0
     msghit = None
     for i in range(len(f)):
-        msg = ecc.GribMessage(f)
+        msg = ecc.codes_grib_new_from_file(f)
         msghit = msg
-        nx = msghit['Nx']
-        ny = msghit['Ny']
-        units = msghit['units']
-        name = msghit['parameterName']
-        val = ma.masked_values(np.flipud(msghit['values'].reshape((ny,nx))),msghit['missingValue'])
+        nx = ecc.codes_get(msghit, 'Nx')
+        ny = ecc.codes_get(msghit, 'Ny')
+        units = ecc.codes_get(msghit, 'units')
+        name = ecc.codes_get(msghit, 'parameterName')
+        val = ma.masked_values(np.flipud(ecc.codes_get_values(msghit, 'values').reshape((ny,nx))),ecc.codes_get(msghit, 'missingValue'))
         field = {'vals':val,'name':name,'units':units}
-        pngfile = "%s_l%s_s%s.png" % (msghit["shortName"],msghit["level"],msghit["step"])
+        pngfile = "%s_l%s_s%s.png" % (ecc.codes_get(msghit, "shortName"),ecc.codes_get(msghit, "level"),ecc.codes_get(msghit, "step"))
         plot_field(field,save=pngfile)
 
 

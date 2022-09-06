@@ -2,7 +2,7 @@
 
 
 module unload eccodes
-module load eccodes/2.21.0
+module load eccodes/2.25.0
 #module load python3/3.6.8-01
 module load python3
 
