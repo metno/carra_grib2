@@ -17,8 +17,6 @@ def create_task_script(task, cfg):
          exports(f)
          f.write("export PATH=%s:$PATH\n" % cfg["bindir"])
          f.write("export BINDIR=%s\n" % cfg["bindir"])
-         f.write("mkdir -p %s/%%DATE%%\n" % (cfg["scratch"]))
-         f.write("cd %s/%%DATE%%\n" % (cfg["scratch"]))
          f.write("%s/%s %s\n" % (cfg["bindir"],task["prog"],task["args"]))
          f.write("\n")
          f.write("######### job end ########\n")
@@ -36,21 +34,23 @@ def cat_file(fnam,dest):
             dest.write(line)
 
 
-def cca_task(name,home):
+def cca_task(name, home, slurm=True, hasFam=True):
     fam="Fetch"
-    #sub = " qsub -N %s -o %%ECF_JOBOUT%% -e %%ECF_JOBOUT%% " % (name)
-    sub = " qsub -N %s -o %%ECF_JOBOUT%% -j oe " % (name)
-    job = " %s%%ECF_NAME%%.job%%ECF_TRYNO%% " % (home[4:])
-    s1 = "ssh %HOST% 'mkdir -p %ECF_OUT%/%SUITE%/%FAMILY%; "
+    famstr = "%%FAMILY%%" if hasFam else ""
+    sub = " sbatch -J %s --qos nf --output %%ECF_JOBOUT%% --error %%ECF_JOBOUT%% " % (name)
+    job = " %s%%ECF_NAME%%.job%%ECF_TRYNO%% " % (home)
+    s1 = "ssh %%HOST%% 'mkdir -p %%ECF_OUT%%/%%SUITE%%/%s; " % famstr
     s3 = " > %ECF_JOBOUT% 2>&1 &'"
-    cmd = s1 + sub + job + s3
+    if slurm:
+        cmd = s1 + sub + job + s3
+    else:
+        cmd = s1 + job + s3
     return Task(name,
-                HOST="cca",
-                ECF_OUT = "%s" % (home[4:]),
+                HOST="hpc-batch",
+                ECF_OUT = "%s" % (home),
                 ECF_LOGHOST='%HOST%',
                 ECF_LOGPORT='51949',
                 ECF_JOB_CMD=cmd)
-
 
 
 def add_suite(suite,cfg):
@@ -92,7 +92,7 @@ def add_suite(suite,cfg):
                }
            }
     
-    initrun = {"Task": Task("InitRun"),
+    initrun = {"Task": cca_task("InitRun", home, hasFam=False, slurm=False),
                     "prog": "InitRun",
                     "args": "%s %s " % (cfg["expdir"], suite)
                       }
@@ -139,17 +139,16 @@ def main(args):
     suite = args["suite"]
     parent_exp = args["parent"]
 
-    port = assume(args["port"], 1500 + os.getuid(), "ECF_PORT")
-    host = assume(args["host"], "ecgate", "ECF_HOST")   
-    hpc = assume(args["compute_server"], "cca", "compute server (where jobs are submitted)")
-
-    scratch = os.path.join(os.getenv("SCRATCH"),"backlog_now/%s/" % suite)
-    print("jobs run under %s:%s" % (hpc,scratch))
+    port = assume(args["port"], 3141, "ECF_PORT")
+    host = assume(args["host"], "ecflow-gen-%s-001" % os.getenv("USER"), "ECF_HOST")   
+    hpc = assume(args["compute_server"], "hpc-batch", "compute server (where jobs are submitted)")
+    
+    scratch = os.path.join("/scratch/", os.getenv("USER"),"backlog_now/%s/" % suite)
     bindir = scratch+"/src/"
     
     expdir = os.path.join(os.getenv("PWD"),"src")
     
-    home = "/hpc/%s/BACKLOG/" % os.getenv("PERM")
+    home = "%s/BACKLOG/" % os.getenv("PERM")
     print("ECF_HOME is at %s" % home)
     
     cfg = {"home": home,

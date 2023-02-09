@@ -1,5 +1,4 @@
-#!/usr/local/apps/python3/3.6.10-01/bin/python3
-
+#!/usr/local/apps/python3/3.8.8-01/bin/python3
 import subprocess
 import os
 import datetime
@@ -40,7 +39,7 @@ def fetch_files(ecfsdir,dts):
             srcf.writelines("ec:%s/*.save.%s.%s00.not_yet.grib1\n" % (dpath,date,h))
             srcf.writelines("ec:%s/fc%s%s+000grib_sfx\n" % (dpath,date,h))
     # command line to execute
-    args = ['module load ecfs;','ecd', ecfsdir,';',
+    args = ['ecd', ecfsdir,';',
             'ecp', '-F', ecfs_sources,'--order=tape', grib_tmp_dir+'/']
     # execution
     print(args)
@@ -87,4 +86,6 @@ if len(content_1) <= len(content_0):
     print(content_0)
     print("No files fetched!! CAUTION!!")
     print(content_1)
-    #exit(1)
+    if len(content_1) < 24:
+        print("All files not fetched. Exiting")
+        exit(1)
