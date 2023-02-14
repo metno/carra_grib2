@@ -1,10 +1,14 @@
 #!/bin/bash
 
 
-module unload eccodes
-module load eccodes/2.25.0
+#module unload eccodes
+#module load eccodes/2.21.0
+#module load eccodes/2.25.1
 #module load python3/3.6.8-01
-module load python3
+#module load python3
+
+module load ecmwf-toolbox/2022.03.0.1
+module load python3/3.8.8-01
 
 dtg=$1
 parent_exp=$2
@@ -17,6 +21,7 @@ version=prod
 
 
 database=marsscratch #mars
+#database=mars
 MARS_DATABASE=$database
 #DOMAIN=$(echo $parent_exp | cut -c1-8)  #   CARRA_NE
 
@@ -33,8 +38,8 @@ fi
 
 rm -f archive.batch
 
-for hh in 00 03 06 09 12 15 18 21 ; do
-#for hh in 03 ; do
+#for hh in 00 03 06 09 12 15 18 21 ; do
+for hh in 09 ; do
 
   for typ in an fc ; do
   
@@ -64,10 +69,17 @@ for hh in 00 03 06 09 12 15 18 21 ; do
       grib_filter rule_sfx.batch $gribfile_in_sfx  # Add extra parameters from sfx file
 
       #Backup analysis file
+      carra_bak=/ec/res4/scratch/fa0e/carra_backup
       if [[ "$suiteName" == "no-ar-cw" ]]; then 
-        cp $gribfile_in /scratch/ms/no/fa0e/carra_backup/IGB/${dtg:0:4}/
+	odir=$carra_bak/IGB/${dtg:0:4}
+	mkdir -p $odir
+        cp $gribfile_in $odir/
+        cp $gribfile_in_sfx $odir/
       else 
-        cp $gribfile_in /scratch/ms/no/fa0e/carra_backup/NE/${dtg:0:4}/
+	odir=$carra_bak/NE/${dtg:0:4}
+	mkdir -p $odir
+        cp $gribfile_in $odir/
+        cp $gribfile_in_sfx $odir/
       fi
 
     fi

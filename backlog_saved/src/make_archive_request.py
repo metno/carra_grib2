@@ -60,29 +60,31 @@ class RequestFromGrib(Request):
         params = []
         levels = []
         steps = []
-        nfields = 0
-        i=0
         with open(gribfile) as gf:
-            while True: 
+            i = 0
+            while True:
                 msg = ecc.codes_grib_new_from_file(gf)
-                params.append(ecc.codes_get(msg, 'param')
-                levels.append(ecc.codes_get(msg, 'level')
-                steps.append(ecc.codes_get(msg, 'step')
+                if msg is None:
+                    break
+                params.append(ecc.codes_get(msg, 'param'))
+                levels.append(ecc.codes_get(msg, 'level'))
+                steps.append(ecc.codes_get(msg, 'step'))
                 if i == 1:
-                    self.date = str(ecc.codes_get(msg, "dataDate")
-                    self.hour = "%04d" % int(ecc.codes_get(msg, "dataTime")
-                    suitename = str(ecc.codes_get(msg, 'suiteName'))
-                    if suitename == '1':
+                    self.date = str(ecc.codes_get(msg, 'dataDate'))
+                    self.hour = "%04d" % int(ecc.codes_get(msg, 'dataTime'))
+   
+                    if str(ecc.codes_get(msg, 'suiteName')) == '1':
                         self.origin = "no-ar-ce"
-                    elif suitename == '2':
+                    elif str(ecc.codes_get(msg, 'suiteName')) == '2':
                         self.origin = "no-ar-cw"
-                    elif suitname == '3':
+                    elif str(ecc.codes_get(msg, 'suiteName')) == '3':
                         self.origin = "no-ar-pa"
                     else:
                         print("unknown origin/suiteName")
                         exit(1)
-                i += 1
-                nfields += 1
+                i = i+1
+
+        nfields = i
         param = list(set(params))
         param.sort()
         self.param = param

@@ -1,10 +1,13 @@
 #!/bin/bash
 
 
-module unload eccodes
-module load eccodes/2.25.0
+#module unload eccodes
+#module load eccodes/2.25.0
 #module load python3/3.6.8-01
-module load python3
+#module load python3
+
+module load ecmwf-toolbox/2022.03.0.1
+module load python3/3.8.8-01
 
 set -x
 
@@ -71,7 +74,7 @@ list,
 EOF
 
   elif [ "$MARS_DATABASE" == "mars" ];then
-          echo mars  << EOF
+    mars -n -t  << EOF
 list,
       class      = RR,
       origin     = $origin,
@@ -91,21 +94,24 @@ list,
       output     = table
 EOF
 fi
-  archived_expected="1254"
-  archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
-  if [[ "$archived" != "$archived_expected" ]] ; then
-    echo "$date: Different number of fields archived than expected: $archived ($archived_expected)! try $k"
-  else
+
+# ES Skip this step since MFB/ODB files are not constant
+#  archived_expected="42008" #1254
+#  archived=$(cat cost.out| grep ^Entries|sed s/,//g| sed 's/.*: //')
+#  if [[ "$archived" != "$archived_expected" ]] ; then
+#    echo "$date: Different number of fields archived than expected: $archived ($archived_expected)! try $k"
+#  else
     all_good=$((all_good + 1))
-  fi
+#  fi
 
 
-  tree_ref=$src/carra-${suiteName}-save.tree.reference.out #$bin/carra-${suiteName}-${fclen}.tree.reference.out
-  if [[ $(diff tree.out ${tree_ref}) ]] ; then
-    echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs! try $k"
-  else
+#ES: Skip this step since we re-archive
+#  tree_ref=$src/carra-${suiteName}-save.tree.reference.out #$bin/carra-${suiteName}-${fclen}.tree.reference.out
+#  if [[ $(diff tree.out ${tree_ref}) ]] ; then
+#    echo "$date: Different fields archived than expected. Check the reference and current MARS list outputs! try $k"
+#  else
     all_good=$((all_good + 1))
-  fi
+#  fi
 
 
   if [[ "$all_good" -eq "2" ]]; then
@@ -121,6 +127,10 @@ done
 
 if [[ "$all_good" -eq "2" ]]; then
   echo "Archiving successful"
+#  echo "Cleaning.."
+#  rm -f an*grib2*
+#  rm -f fc*grib2* 
+#  rm -f grib_tmp/*
 else
   echo "Archive check failed!"
   exit 1

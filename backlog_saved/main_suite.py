@@ -17,6 +17,8 @@ def create_task_script(task, cfg):
          exports(f)
          f.write("export PATH=%s:$PATH\n" % cfg["bindir"])
          f.write("export BINDIR=%s\n" % cfg["bindir"])
+         f.write("mkdir -p %s/%%DATE%%\n" % (cfg["scratch"]))
+         f.write("cd %s/%%DATE%%\n" % (cfg["scratch"]))
          f.write("%s/%s %s\n" % (cfg["bindir"],task["prog"],task["args"]))
          f.write("\n")
          f.write("######### job end ########\n")
@@ -148,7 +150,7 @@ def main(args):
     
     expdir = os.path.join(os.getenv("PWD"),"src")
     
-    home = "%s/BACKLOG/" % os.getenv("PERM")
+    home = "%s/BACKLOG/" % os.getenv("HOME")
     print("ECF_HOME is at %s" % home)
     
     cfg = {"home": home,

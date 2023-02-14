@@ -71,7 +71,7 @@ switch (param) {
        default: set param2 = -999;
      }
 
-#TEMPORARY   case  92.1:   set param2 = 174098;  # sea ice thickness
+##   case  92.1:   set param2 = 174098;  # sea ice thickness
    case 130.253: set param2 = 210;     # net short wave clear sky
    case 131.253: set param2 = 211;     # net long wave clear sky
    case 113.253: set param2 = 178;     # TOA net short wave
@@ -137,6 +137,10 @@ if (param2 != -999) {
   ################# major start ###################
   if (LoV < 0) {
     set LoV = 360000 + LoV; # GRIB1 angles are in millidegrees
+  }
+
+  if (param2==260649 || param2==49){ # carra hack, needs to be before centre=ecmwf
+    set productionStatusOfProcessedData = 10;
   }
   
   set centre = "ecmf"; # generaly used hack for conversion..
