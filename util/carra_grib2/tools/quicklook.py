@@ -1,64 +1,85 @@
-#!/usr/bin/python
-
 import numpy as np
 import numpy.ma as ma
-import eccodes as ecc
 import matplotlib.pyplot as plt
-import sys
 import argparse
-import os
-import re
+import xarray as xr
+import copy
+import datetime
+import eccodes as ecc
+import metview as mv
 
-def get_field(fnam,req):
-    f = ecc.GribFile(fnam)
-    nfound = 0
-    msghit = None
-    for i in range(len(f)):
-        msg = ecc.GribMessage(f)
-        matchlist = []
-        for key in req:
-            if str(msg[key]) == str(req[key]):
-                matchlist.append(1)
-                continue
-            else:
+
+def get_field(fnam, req):
+    with open(fnam) as f:
+        nfound = 0
+        msghit = None
+        tmp = []
+        while True:
+            msg = ecc.codes_grib_new_from_file(f)
+            if msg is None:
                 break
-        if len(matchlist) == len(req):
-            if msghit:
-                print("Ambigous spesification! found more than one match")
-                print(req)
-                exit(1)
-            msghit = msg
-            nfound += 1
-    if nfound == 0:
-        print("No match!")
-        print(req)
-    nx = msghit['Nx']
-    ny = msghit['Ny']
-    name = msghit['parameterName']
-    val = ma.masked_values(np.flipud(msghit['values'].reshape((ny,nx))),msghit['missingValue'])
-    return {'vals':val,'name':name}
-
-def plot_all(fnam):
-    f = ecc.GribFile(fnam)
-    dirnam = fnam + "_plots"
-    if os.path.isdir(dirnam):
-         pass
-    else:
-         os.mkdir(dirnam)
-
-    for i in range(len(f)):
-         msg = ecc.GribMessage(f)
-         nx = msg['Nx']
-         ny = msg['Ny']
-         name = msg['parameterName']
-         val = ma.masked_values(np.flipud(msg['values'].reshape((ny,nx))),msg['missingValue'])
-         plt.imshow(val,cmap="jet",interpolation="none")
-         plt.title("%s [%s] %sH%s" % (name,msg['units'],msg['date'],msg['time']))
-         plt.colorbar()
-         plt.savefig("%s/%s_%s_lvl%s_stp%s.png" % (dirnam,re.sub("( )+","_",name),msg['levelType'],msg['level'],msg['step']))
-         plt.close()
+            matchlist = []
+            for key in req:
+                mval = ecc.codes_get(msg, key)
+                tmp += [mval]
+                if str(mval) == str(req[key]):
+                    matchlist.append(1)
+                    continue
+                else:
+                    break
+            if len(matchlist) == len(req):
+                if msghit:
+                    print('Ambigous spesification! found more than one match')
+                    print(req)
+                    exit(1)
+                msghit = ecc.codes_clone(msg)
+                nfound += 1
+                break
+        if nfound == 0:
+            print('No match!')
+            print(req)
+            print(tmp)
+        nx = ecc.codes_get(msghit, 'Nx')
+        ny = ecc.codes_get(msghit, 'Ny')
+        name = ecc.codes_get(msghit, 'parameterName')
+        val = ma.masked_values(ecc.codes_get_values(msghit).reshape((ny,nx)), ecc.codes_get(msghit, 'missingValue'))
+        return {'vals':val,'name':name}
 
 
+def request_vars(params, dt, type_='an', step=0, origin='no-ar-ce', database=None):
+    ds = {}
+    vars = copy.deepcopy(params)
+    paramlist = [vars[param] for param in vars]
+    ret = mv.retrieve(type=type_,
+                      levtype='sfc',
+                      param=paramlist,
+                      date=dt.strftime('%Y-%m-%d'),
+                      expver='prod',
+                      origin=origin,
+                      class_='rr',
+                      time=dt.strftime('%H'),
+                      database=database,
+                      stream='oper',
+                      step=step)
+    
+    x = ret.to_dataset()
+    param = list(x.data_vars)[0]
+    attrs = x.variables[param].attrs
+    lons = x.longitude.values
+    lats = x.latitude.values
+        
+    ds['misc'] = {'date':dt,
+                  #'lons':lons2,
+                  #'lats':lats,
+                  #'proj':proj,
+                  'attrs':attrs,
+                  'fcstep':step}
+    
+    missVal = x.variables[param].attrs['GRIB_missingValue']
+    val = ma.masked_values(x.variables[param].values,missVal)
+    ds['params'] = {param: {'field': val}}
+    return {'vals':val,'name':param}
+    
 
 def str2dict(string):
     keys = {}
@@ -69,52 +90,57 @@ def str2dict(string):
     return keys
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     
     parser = argparse.ArgumentParser(description='take a quicklook on parameter from gribfile')
-    parser.add_argument('filename',type=str,help='grib file name file')
-    parser.add_argument('-w','--where',type=str,required=False,help='comma separated list of key specifier')
-    parser.add_argument('-fd','--filediff',type=str,default=None,help='name of file to compare')
-    parser.add_argument('-wd','--wherediff',type=str,default=None,help='specifier to compare')
-    parser.add_argument('-o','--output',type=str,default=None,help='output file (png)')
-    parser.add_argument('-a','--all',action="store_true",default=False,help='plot all fields')
+    parser.add_argument('filename', type=str, help='grib file name file')
+    parser.add_argument('-w','--where', type=str, required=True, help='comma separated list of key specifier')
+    parser.add_argument('-fd','--filediff', type=str, default=None, help='name of file to compare')
+    parser.add_argument('-wd','--wherediff', type=str, default=None, help='specifier to compare')
 
     args = parser.parse_args()
     fnam = args.filename
     keys = {}
-    try:
-        opts = args.where.split(',')
-        keys = str2dict(args.where)
-    except:
-        print("hope you run with -a/--all")
+    opts = args.where.split(',')
+    keys = str2dict(args.where)
 
-    if args.all:
-        plot_all(fnam)
+
+    if fnam in [f'no-ar-{id}' for id in ['cw', 'ce', 'pa']]:
+        try:
+            dt = datetime.datetime.strptime(keys['dtg'], '%Y%m%d%H')
+            type_ = 'an'
+            step = 0
+            if 'type' in keys:
+                type_ = keys['type']
+            if 'step' in keys:
+                step = keys['step']
+            field = request_vars({'param': keys['param']}, dt, type_=type_, step=step, origin=fnam)
+        except Exception as e:
+            raise e
     else:
-
-        field = get_field(fnam,keys)
-        
-        if args.filediff or args.wherediff:
-            diffile = fnam
-            wkeys = keys
-            if args.filediff:
-                diffile = args.filediff
-            if args.wherediff:
-                wkeys = str2dict(args.wherediff)
-            field2 = get_field(diffile,wkeys)
+        field = get_field(fnam, keys)
     
-            x = field['vals'] - field2['vals']
-            lim = np.max(np.abs(x))
-            plt.imshow(x,cmap="seismic",vmin=-lim,vmax=lim)
-            plt.title(field['name'])
-        else:
-            plt.imshow(field['vals'],cmap="jet")
-            plt.title(field['name'])
-        plt.colorbar()
-        if args.output:
-            plt.savefig(args.output)
-            plt.close()
-        else:
-            plt.show() 
+    if args.filediff or args.wherediff:
+        # TODO mars source
+        diffile = fnam
+        wkeys = keys
+        if args.filediff:
+            diffile = args.filediff
+        if args.wherediff:
+            wkeys = str2dict(args.wherediff)
+        field2 = get_field(diffile,wkeys)
 
+        x = field['vals'] - field2['vals']
+        lim = np.max(np.abs(x))
+        plt.imshow(x, cmap='seismic',vmin=-lim,vmax=lim, origin='lower')
+        plt.title(field['name'])
+        plt.colorbar()
+        plt.ylim((0,field['vals'].shape[0]))
+        plt.show()
+    else:
+        plt.imshow(field['vals'],cmap='jet', origin='lower')
+        plt.title(field['name'])
+        plt.colorbar()
+        plt.ylim((0,field['vals'].shape[0]))
+        plt.show()
 
