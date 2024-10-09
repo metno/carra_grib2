@@ -33,6 +33,59 @@ archiving to mars for the CARRA project and some additional tools for visualisat
 > make png plots based on recently archived mars data for quick inspection.
 
   
+## Tools:
 
+* **quicklook.py**:
+  Visualize a field from gribfile or mars. Possible to plot difference between fiels and fields. Requires metview and eccodes and python3 with matplotlib++
+  ```
+    $ ./quicklook.py -h
 
+    usage: quicklook.py [-h] -w WHERE [-fd FILEDIFF] [-wd WHEREDIFF] filename
+    
+    take a quicklook on parameter from gribfile
+    
+    positional arguments:
+      filename              grib filename (or mars origin)
+    
+    options:
+      -h, --help            show this help message and exit
+      -w WHERE, --where WHERE
+                            comma separated list of key specifier
+      -fd FILEDIFF, --filediff FILEDIFF
+                            name of file to compare
+      -wd WHEREDIFF, --wherediff WHEREDIFF
+                            specifier to compare
+    
+    Examples:
+        grib1 file
+        ./quicklook.py fc2024073112+004grib_fp -w param=11.253 
+    
+        from mars (carra2) 
+        ./quicklook.py no-ar-pa -w param=167,dtg=2020121706,step=2,type=fc
+    
+        diff mars and gribfile
+        ./quicklook.py no-ar-ce -w param=167,dtg=2020121706,step=0 -fd fc2024073112+012grib_fp -wd param=11.253 
+  ```
+
+* **batch_plot_fields.py**:
+  Saves predefined figures (weather maps) for a given time/source
+
+```
+  $ ./batch_plot_fields.py -h
+usage: batch_plot_fields.py [-h] [--dtg DTG] [--source SOURCE] [--origin ORIGIN] [--database DATABASE]
+
+make wheather maps
+
+options:
+  -h, --help           show this help message and exit
+  --dtg DTG            yyyymmddhh
+  --source SOURCE      mars or path/to/grib2files/
+  --origin ORIGIN      DOMAIN: no-ar-ce, no-ar-cw, no-ar-pa
+  --database DATABASE  database
+
+    Examples:
+
+    ./batch_plot_fields.py --dtg 2020121706
+
+  ```
 
