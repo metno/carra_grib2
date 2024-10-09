@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import numpy.ma as ma
 import matplotlib.pyplot as plt
@@ -9,7 +11,15 @@ import eccodes as ecc
 import metview as mv
 
 
-def get_field(fnam, req):
+def get_field(fnam, keys):
+    if fnam in [f'no-ar-{id}' for id in ['cw', 'ce', 'pa']]:
+        field = get_field_mars(fnam, keys)
+    else:
+        field = get_field_grib(fnam, keys)
+    return field
+ 
+
+def get_field_grib(fnam, req):
     with open(fnam) as f:
         nfound = 0
         msghit = None
@@ -45,13 +55,31 @@ def get_field(fnam, req):
         val = ma.masked_values(ecc.codes_get_values(msghit).reshape((ny,nx)), ecc.codes_get(msghit, 'missingValue'))
         return {'vals':val,'name':name}
 
+def get_field_mars(fnam, keys):
+    try:
+        dt = datetime.datetime.strptime(keys['dtg'], '%Y%m%d%H')
+        type_ = 'an'
+        step = 0
+        leveltype = 'sfc'
+        if 'type' in keys:
+            type_ = keys['type']
+        if 'step' in keys:
+            step = keys['step']
+        if 'leveltype' in keys:
+            leveltype = keys['leveltype']
 
-def request_vars(params, dt, type_='an', step=0, origin='no-ar-ce', database=None):
+        field = request_vars({'param': keys['param']}, dt, type_=type_, step=step, origin=fnam)
+    except Exception as e:
+        raise e
+    return field 
+
+
+def request_vars(params, dt, type_='an', step=0, leveltype='sfc', origin='no-ar-ce', database=None):
     ds = {}
     vars = copy.deepcopy(params)
     paramlist = [vars[param] for param in vars]
     ret = mv.retrieve(type=type_,
-                      levtype='sfc',
+                      levtype=leveltype,
                       param=paramlist,
                       date=dt.strftime('%Y-%m-%d'),
                       expver='prod',
@@ -92,8 +120,25 @@ def str2dict(string):
 
 if __name__ == '__main__':
     
-    parser = argparse.ArgumentParser(description='take a quicklook on parameter from gribfile')
-    parser.add_argument('filename', type=str, help='grib file name file')
+    example_usage = '''
+Examples:
+
+  grib1 file
+  ./quicklook.py fc2024073112+004grib_fp -w param=11.253 
+
+  from mars (carra2) 
+  ./quicklook.py no-ar-pa -w param=167,dtg=2020121706,step=2,type=fc
+
+  diff mars and gribfile
+  ./quicklook.py no-ar-ce -w param=167,dtg=2020121706,step=0 -fd fc2024073112+012grib_fp -wd param=11.253 
+ 
+ '''
+    parser = argparse.ArgumentParser(description='take a quicklook on parameter from gribfile',
+                                     formatter_class=argparse.RawDescriptionHelpFormatter,
+                                     epilog=example_usage)
+
+
+    parser.add_argument('filename', type=str, help='grib filename (or mars origin)')
     parser.add_argument('-w','--where', type=str, required=True, help='comma separated list of key specifier')
     parser.add_argument('-fd','--filediff', type=str, default=None, help='name of file to compare')
     parser.add_argument('-wd','--wherediff', type=str, default=None, help='specifier to compare')
@@ -104,43 +149,33 @@ if __name__ == '__main__':
     opts = args.where.split(',')
     keys = str2dict(args.where)
 
-
-    if fnam in [f'no-ar-{id}' for id in ['cw', 'ce', 'pa']]:
-        try:
-            dt = datetime.datetime.strptime(keys['dtg'], '%Y%m%d%H')
-            type_ = 'an'
-            step = 0
-            if 'type' in keys:
-                type_ = keys['type']
-            if 'step' in keys:
-                step = keys['step']
-            field = request_vars({'param': keys['param']}, dt, type_=type_, step=step, origin=fnam)
-        except Exception as e:
-            raise e
-    else:
-        field = get_field(fnam, keys)
-    
+    field = get_field(fnam, keys)
+   
     if args.filediff or args.wherediff:
-        # TODO mars source
         diffile = fnam
         wkeys = keys
         if args.filediff:
             diffile = args.filediff
         if args.wherediff:
             wkeys = str2dict(args.wherediff)
-        field2 = get_field(diffile,wkeys)
+        
+        field2 = get_field(diffile, wkeys)
 
         x = field['vals'] - field2['vals']
         lim = np.max(np.abs(x))
-        plt.imshow(x, cmap='seismic',vmin=-lim,vmax=lim, origin='lower')
-        plt.title(field['name'])
-        plt.colorbar()
-        plt.ylim((0,field['vals'].shape[0]))
-        plt.show()
+        vmin = -lim
+        vmax = lim
+        cmap = 'RdBu_r'
     else:
-        plt.imshow(field['vals'],cmap='jet', origin='lower')
-        plt.title(field['name'])
-        plt.colorbar()
-        plt.ylim((0,field['vals'].shape[0]))
-        plt.show()
+        x = field['vals']
+        cmap = 'jet'
+        lim = None
+        vmin = None
+        vmax = None
+
+    plt.imshow(x, cmap=cmap,vmin=vmin,vmax=vmax, origin='lower')
+    plt.title(field['name'])
+    plt.colorbar()
+
+    plt.show()
 

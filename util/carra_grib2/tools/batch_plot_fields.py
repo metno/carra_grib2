@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import numpy as np
 import numpy.ma as ma
 import xarray as xr
@@ -289,7 +291,17 @@ def from_mars(dt, origin, database=None):
 
 if __name__=='__main__':
 
-    parser = argparse.ArgumentParser(description='make wheather maps')
+
+    use_example = '''
+Examples:
+
+  ./batch_plot_fields.py --dtg 2020121706
+
+'''
+    parser = argparse.ArgumentParser(description='make wheather maps',
+                                     epilog=use_example,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter
+                                     )
     parser.add_argument('--dtg', type=str, help='yyyymmddhh')
     parser.add_argument('--source', type=str, default='mars', help='mars or path/to/grib2files/')
     parser.add_argument('--origin', type=str, default='no-ar-pa', help="DOMAIN: no-ar-ce, no-ar-cw, no-ar-pa")
