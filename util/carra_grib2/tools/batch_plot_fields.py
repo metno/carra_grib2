@@ -243,6 +243,33 @@ def wind_vel(ds):
     plt.title("Wind velocity \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
 
 
+def swe(ds):
+    lons = ds['misc']['lons']
+    lats = ds['misc']['lats']
+    proj = ds['misc']['proj']
+    dt = ds['misc']['date']
+    fcstep = ds['misc']['fcstep']
+    # Fields to plot
+    swe = ds['params']['sd']['field']
+    PRJ = pyproj.Proj(proj.proj4_init)
+    x, y = PRJ(lons, lats)
+    fig = plt.figure(figsize=[12,9])
+    ax = plt.axes(projection=proj)
+    ax.set_facecolor('lightgrey')
+    CS = ax.pcolormesh(x, y, swe,
+                      transform=proj,
+                      cmap='bone',
+                      vmin=0,
+                      vmax=300,
+                      zorder=1,
+                      alpha=0.9)
+    plt.colorbar(CS, shrink=0.5, orientation='vertical')
+    ax.coastlines('50m')
+    ax.gridlines()
+    plt.title("Analysed SWE \n%s UTC + %dh" % (dt.strftime('%Y-%m-%d %H:00'), fcstep))
+
+
+
 def from_path(path):
     params = {'msl':{'param':151},
               'tp':{'param':228228}
@@ -262,31 +289,44 @@ def from_path(path):
         plt.show()
 
 
-def from_mars(dt, origin, database=None):
-    # mslp + precip
-    params = {'msl':{'param':151},
-              'tp':{'param':228228}
-              }
-    ds = request_vars(params, dt, type_='fc', origin=origin, step=3, database=database)
-    mslp_precip(ds)
-    plt.savefig('mslp_precip_%s_%s_%d.png' % (origin, dt.strftime("%Y%m%d%H"),3))
-    plt.close()
+def from_mars(dt, origin, database=None, figures=None):
+    if figures is None:
+        figures = ['mslp', 't2m', 'wind', 'swe']
 
-    # t2m analysis
-    params = {'t2m':{'param':167 }} 
-    ds = request_vars(params, dt, type_='an', origin=origin, step=0, database=database)
-    t2m_rh2m(ds)
-    plt.savefig('t2m_analysis_%s_%s.png' % (origin, dt.strftime("%Y%m%d%H")))
-    plt.close()
-
-    # wind
-    params = {'u10': {'param':165},
-              'v10': {'param':166}}
-    ds = request_vars(params, dt, type_='fc', origin=origin, step=3, database=database)
-    wind_vel(ds)
-    plt.savefig('wind_%s_%s.png' % (origin, dt.strftime("%Y%m%d%H")))
-    plt.close()
-
+    if 'mslp' in figures:
+        # mslp + precip
+        params = {'msl':{'param':151},
+                  'tp':{'param':228228}
+                  }
+        ds = request_vars(params, dt, type_='fc', origin=origin, step=3, database=database)
+        mslp_precip(ds)
+        plt.savefig('mslp_precip_%s_%s_%d.png' % (origin, dt.strftime("%Y%m%d%H"),3))
+        plt.close()
+    
+    if 't2m' in figures:
+        # t2m analysis
+        params = {'t2m':{'param':167 }} 
+        ds = request_vars(params, dt, type_='an', origin=origin, step=0, database=database)
+        t2m_rh2m(ds)
+        plt.savefig('t2m_analysis_%s_%s.png' % (origin, dt.strftime("%Y%m%d%H")))
+        plt.close()
+    
+    if 'wind' in figures:
+        # wind
+        params = {'u10': {'param':165},
+                  'v10': {'param':166}}
+        ds = request_vars(params, dt, type_='fc', origin=origin, step=3, database=database)
+        wind_vel(ds)
+        plt.savefig('wind_%s_%s.png' % (origin, dt.strftime("%Y%m%d%H")))
+        plt.close()
+    
+    if 'swe' in figures:
+        # Snow
+        params = {'sd': {'param':228141}}
+        ds = request_vars(params, dt, type_='an', origin=origin, step=0, database=database)
+        swe(ds)
+        plt.savefig('SWE_%s_%s.png' % (origin, dt.strftime("%Y%m%d%H")))
+        plt.close()
 
 
 if __name__=='__main__':
@@ -302,14 +342,19 @@ Examples:
                                      epilog=use_example,
                                      formatter_class=argparse.RawDescriptionHelpFormatter
                                      )
-    parser.add_argument('--dtg', type=str, help='yyyymmddhh')
+    parser.add_argument('--dtg', type=str, required=True, help='yyyymmddhh')
     parser.add_argument('--source', type=str, default='mars', help='mars or path/to/grib2files/')
     parser.add_argument('--origin', type=str, default='no-ar-pa', help="DOMAIN: no-ar-ce, no-ar-cw, no-ar-pa")
     parser.add_argument('--database', type=str, default=None, help="database")
+    parser.add_argument('--figures', type=str, default=None, help='mslp,t2m,wind,swe')
     
     args = parser.parse_args()    
     dt = datetime.datetime.strptime(args.dtg,"%Y%m%d%H")
+    figs = None
+
+    if args.figures is not None:
+        figs = args.figures.split(',')
 
     if args.source == 'mars':
-        from_mars(dt, args.origin, database=args.database)
+        from_mars(dt, args.origin, database=args.database, figures=figs)
 

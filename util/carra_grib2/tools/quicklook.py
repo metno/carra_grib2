@@ -142,6 +142,7 @@ Examples:
     parser.add_argument('-w','--where', type=str, required=True, help='comma separated list of key specifier')
     parser.add_argument('-fd','--filediff', type=str, default=None, help='name of file to compare')
     parser.add_argument('-wd','--wherediff', type=str, default=None, help='specifier to compare')
+    parser.add_argument('-m', '--minmax', type=str, default=None, help='min,max')
 
     args = parser.parse_args()
     fnam = args.filename
@@ -172,6 +173,10 @@ Examples:
         lim = None
         vmin = None
         vmax = None
+
+    if args.minmax is not None:
+        s = args.minmax.split(',')
+        vmin, vmax = float(s[0]), float(s[1])
 
     plt.imshow(x, cmap=cmap,vmin=vmin,vmax=vmax, origin='lower')
     plt.title(field['name'])
