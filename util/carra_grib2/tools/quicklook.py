@@ -163,7 +163,7 @@ Examples:
         field2 = get_field(diffile, wkeys)
 
         x = field['vals'] - field2['vals']
-        lim = np.max(np.abs(x))
+        lim = np.nanmax(np.abs(x))
         vmin = -lim
         vmax = lim
         cmap = 'RdBu_r'
@@ -173,7 +173,7 @@ Examples:
         lim = None
         vmin = None
         vmax = None
-
+    #print(vmin, vmax)
     if args.minmax is not None:
         s = args.minmax.split(',')
         vmin, vmax = float(s[0]), float(s[1])
