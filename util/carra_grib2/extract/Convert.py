@@ -39,22 +39,22 @@ def parse_config(configYML):
     return conf_dict
 
 
-
-def write_gf(fnam,messages):
+def write_gf(fnam, messages):
     with open(fnam,'wb') as fout:
         for msg in messages:
-            msg.write(fout)
+            ecc.codes_write(msg, fout)
     return 0
 
 
 def read_gf(fnam):
-    gfin = ecc.GribFile(fnam)
     msgs = []
-    for i in range(len(gfin)):
-        msg = ecc.GribMessage(gfin)
-        msgs.append(ecc.GribMessage(clone=msg))
-    gfin.close()
-    del gfin
+    with open(fnam) as fh:
+        while True:
+            gid = ecc.codes_grib_new_from_file(fh)
+            if gid is not None:
+                msgs += [gid]
+            else:
+                break
     return msgs
 
 
@@ -62,10 +62,13 @@ def process_gf(fnam,func):
     msgs_in = read_gf(fnam)
     msgs_out = []
     for msg in msgs_in:
-        missval = msg['missingValue']
+        missval = ecc.codes_get(msg, 'missingValue')
         msg2 = msg
-        msg2['values'] = np.where(msg2['values'] != missval, func(msg['values']),missval)
+        vals_in = ecc.codes_get_values(msg)
+        ecc.codes_set_values(msg2, np.where(vals_in != missval, func(vals_in), missval))
+        vals_out = ecc.codes_get_values(msg2)
         msgs_out.append(msg2)
+
     write_gf(fnam+'on',msgs_out)
     del msgs_in
     del msgs_out
