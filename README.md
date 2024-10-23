@@ -36,8 +36,12 @@ archiving to mars for the CARRA project and some additional tools for visualisat
 ## Tools:
 * **quicklook.py**:
   Visualize a field from gribfile or mars. Possible to plot difference between fiels and fields. Requires metview and eccodes and python3 with matplotlib++
- 
+
 ```
+# on atos you will need to load the following modules
+module load python3
+module load ecmwf-toolbox
+
 ./quicklook.py -h
 usage: quicklook.py [-h] -w WHERE [-fd FILEDIFF] [-wd WHEREDIFF] [-m MINMAX] filename
 
