@@ -2,6 +2,7 @@
 
 import numpy as np
 import numpy.ma as ma
+import matplotlib
 import matplotlib.pyplot as plt
 import argparse
 import xarray as xr
@@ -120,6 +121,10 @@ def str2dict(string):
 
 if __name__ == '__main__':
     
+
+    matplotlib.rcParams["image.interpolation"] = "none"
+    matplotlib.rcParams["axes.facecolor"] = "lightgrey"
+
     example_usage = '''
 Examples:
 
